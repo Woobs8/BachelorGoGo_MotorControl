@@ -18,11 +18,9 @@
 int main(void) {
         /* init the peripherals - contain the definitions for config bits */
     /* configure PLL, GPIO, PWM & ADC */
+    
     InitPeriph();
-    PWM_Initialize(20000, Q15(0.20),Q15(0.50),Q15(0.60));
-    PWM_Start();
-    __delay32(100000000);
-    PWM_SetDutyCycles(Q15(0.10),Q15(0.25),Q15(0.40));
+    
     while(1){
     }// End of Main loop
     

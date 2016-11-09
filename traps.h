@@ -1,22 +1,22 @@
 /**
-  System Interrupts Generated Driver File 
+  System Traps Generated Driver File 
 
   @Company:
     Microchip Technology Inc.
 
   @File Name:
-    interrupt_manager.h
+    traps.h
 
   @Summary:
-    This is the generated driver implementation file for setting up the
-    interrupts using MPLAB(c) Code Configurator
+    This is the generated driver implementation file for handling traps
+    using MPLAB(c) Code Configurator
 
   @Description:
-    This source file provides implementations for MPLAB(c) Code Configurator interrupts.
+    This source file provides implementations for MPLAB(c) Code Configurator traps.
     Generation Information : 
         Product Revision  :  MPLAB(c) Code Configurator - 3.16
         Device            :  dsPIC33EP128MC504
-        Version           :  1.01
+        Version           :  1.00
     The generated drivers are tested against the following:
         Compiler          :  XC16 1.26
         MPLAB             :  MPLAB X 3.20
@@ -43,18 +43,46 @@
     TERMS.
 */
 
-/**
-    Section: Includes
-*/
-#include <xc.h>
+#ifndef _TRAPS_H
+#define _TRAPS_H
+
+#include <stdint.h>
 
 /**
-    void INTERRUPT_Initialize (void)
-*/
-void INTERRUPT_Initialize (void)
+ * Error codes
+ */
+typedef enum 
 {
-    //    ICI_INT: Input Compare 1
-    //    Priority: 1
-        IPC0bits.IC1IP = 1;
-}
+    /* ----- Traps ----- */
+    TRAPS_OSC_FAIL = 0, /** Oscillator Fail Trap vector */
+    TRAPS_STACK_ERR = 1, /** Stack Error Trap Vector */
+    TRAPS_ADDRESS_ERR = 2, /** Address error Trap vector */
+    TRAPS_MATH_ERR = 3, /** Math Error Trap vector */
+    TRAPS_DMAC_ERR = 4, /** DMAC Error Trap vector */
+} TRAPS_ERROR_CODE;
 
+/**
+  @Summary
+    Default handler for the traps
+
+  @Description
+    This routine will be called whenever a trap happens. It stores the trap
+    error code and waits forever.
+    This routine has a weak attribute and can be over written.
+
+  @Preconditions
+    None.
+
+  @Returns
+    None.
+
+  @Param
+    None.
+
+  @Example
+    None.
+
+*/
+void __attribute__((naked, noreturn, weak)) TRAPS_halt_on_error(uint16_t code);
+
+#endif
