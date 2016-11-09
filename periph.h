@@ -33,14 +33,18 @@
 * certify, or support the code.
 *
 ******************************************************************************/
+//#define TCY_SEC         1
+#define FCY_HZ          70000000            // Instruction cycle frequency (Hz)
+#define FCY             70000000UL
+#define FOSC            140000000UL
+
 #include "general.h"   /* includes types definitions used */
 #include "spi.h"   /* includes types definitions used */
 #include "interrupt_manager.h"
+#include "ic1.h"
+#include "tmr2.h"
+#include "pwm.h"
 
-//#define TCY_SEC         1
-#define FCY_HZ          64000000            // Instruction cycle frequency (Hz)
-#define FCY             64000000UL
-#define FOSC            128000000UL
 //#define TCY_SEC         (1.0/FCY_HZ)          // Instruction cycle period (sec)
 //#define LOOPTIME_TCY    (unsigned int)(LOOPTIME_SEC/TCY_SEC)   // Basic loop period in units of Tcy
 

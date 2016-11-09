@@ -67,40 +67,21 @@ void InitPeriph(void)
     //
     // Fin   	  = 7.37 MHz
     // Fosc       = x MHz
-    // Fcy        = Fosc/2 = 
+    // Fcy        = Fosc/2
+    // 70 MIPS                   (7.37 * M)/(N2*N1)
+    // 70 MIPS (70.015 Mhz) (i.e (7.37 * 76 )/(2*2))
 
 	/****************** Clock definitions *********************************/
- 
-/*
-   // 70 MIPS (70.015 Mhz) (i.e (7.37 * (76/4))/2)
 
-    PLLFBD =  74; 			    // M = 76    74
-    CLKDIVbits.PLLPOST = 0; 	// N2 = (2 x (PLLPOST + 1)) = 2   0
-    CLKDIVbits.PLLPRE = 0;		// N1 = (PLLPRE + 2) = 2        0
-*/
-    // 70 MIPS (70 Mhz) (i.e (8 * (70/4))/2)
-
-	PLLFBD = 68; // dPLL derived in UserParms.h
-	CLKDIVbits.PLLPOST = 0;		// N1=2
-	CLKDIVbits.PLLPRE = 0;		// N2=2
-    
-/* // Initiate Clock Switch to Primary Oscillator with PLL (NOSC=0b011)
-
-    __builtin_write_OSCCONH(0x03);
-    __builtin_write_OSCCONL(0x01);
-    while(OSCCONbits.COSC != 0x03);
-    
-    while(OSCCONbits.LOCK != 1);	
-
- */   
+	PLLFBD = 74;                // M    =   76 
+	CLKDIVbits.PLLPOST = 0;		// N1   =   2
+	CLKDIVbits.PLLPRE = 0;		// N2   =   2
     // Initiate Clock Switch to FRC with PLL (NOSC=0b001)
-
     __builtin_write_OSCCONH(0x01);
     __builtin_write_OSCCONL(0x01);
 
-
+    // Wait for Clock to lock at 70MPIS
     while(OSCCONbits.COSC != 0b001);
-    
     while(OSCCONbits.LOCK != 1);
 
     // Turn saturation on to insure that overflows will be handled smoothly.
@@ -119,6 +100,8 @@ void InitPeriph(void)
     TRISAbits.TRISA2  = 1;      // RA2 Input Ex OSC
     TRISAbits.TRISA1  = 1;      // RA1 Input AN1
     TRISAbits.TRISA0  = 1;      // RA0 Input AN0
+    
+    RPINR7bits.IC1R = 0x0027;   //RB7->IC1:IC1;
     
     ANSELA = 0;
     ANSELAbits.ANSA4  = 1;      // RA4 Spi - Analog not specified can be set! 
@@ -172,16 +155,10 @@ void InitPeriph(void)
     
 		
 	/******************* Spi 1 Initialize ***************************/
-	/*Assigning the TX and RX pins to ports RP97 & RP53 to the dsPIC*/
-	//__builtin_write_OSCCONL(OSCCON & (~(1<<6))); // clear bit 6 
-
-    //RPINR19bits.U2RXR = 53;		// Make Pin RP53 U2RX
-    //RPOR7bits.RP97R = 3;	    // Make Pin RP97 U2TX
-	
-	//__builtin_write_OSCCONL(OSCCON | (1<<6)); 	 // Set bit 6
-
+	/* SPI 1 is used to setup the Gate driver DRV8305*/
     SPI1_Initialize();
-	/****************************************************************/
+    
+    /****************************************************************/
     /*
     // Initialise OPAMP/Comparator 
     // OpAmp 1,2,3 for Signal Conditioning Currents & Comparator 4 for Fault Generation
@@ -202,115 +179,15 @@ void InitPeriph(void)
     */
    // ============= Motor PWM ======================
 
-    // Center aligned PWM.
-    // Note: The PWM period is set to dLoopInTcy/2 but since it counts up and 
-    // and then down => the interrupt flag is set to 1 at zero => actual 
-    // interrupt period is dLoopInTcy
-/*
-	PHASE1 = LOOPTIME_TCY;
-	PHASE2 = LOOPTIME_TCY;
-	PHASE3 = LOOPTIME_TCY;
-	PTPER = 2*LOOPTIME_TCY+1;
+    // Center aligned PWM. 20kHz
+    //PWM_Initialize(20000);
 
-	PWMCON1 = 0x0204;	        // Enable PWM output pins and configure them as 
-	PWMCON2 = 0x0204;	        // complementary mode
-	PWMCON3 = 0x0204;
-
-	//I/O pins controlled by PWM
-	IOCON1 = 0xC000;
-	IOCON2 = 0xC000;
-	IOCON3 = 0xC000;
-
-	//set pin outputs
+    // ============= Motor Speed Reference Measurement ======================
+    TMR2_Initialize(); //  Timer will be a clock to IC1
+    IC1_Initialize();  //  IC1 Will measure an input PWM where
+                       //  20% pwm is 0% torque -> 80% pwm is 100% torque
     
-	DTR1 = 0x0000;
-	DTR2 = 0x0000;
-	DTR3 = 0x0000;
-
-	ALTDTR1 = DDEADTIME;        // 700ns of dead time
-	ALTDTR2 = DDEADTIME;	    // 700ns of dead time
-	ALTDTR3 = DDEADTIME;	    // 700ns of dead time
-
-	FCLCON1 = 0x03;             //Fault disabled
-	FCLCON2 = 0x03;             //Fault disabled
-	FCLCON3 = 0x03;             //Fault disabled
-
-	PTCON2 = 0x0000;	        // Divide by 1 to generate PWM
-
-    PDC1 = MIN_DUTY;            // Intialising the duty register 
-    PDC2 = MIN_DUTY;            // Intialising the duty register
-    PDC3 = MIN_DUTY;            // Intialising the duty register
-    
-	IPC23bits.PWM1IP = 4;	    // PWM Interrupt Priority 4
-	IPC23bits.PWM2IP = 4;	    // PWM Interrupt Priority 4
-	IPC24bits.PWM3IP = 4;	    // PWM Interrupt Priority 4
-
-	IFS5bits.PWM1IF = 0;	    //clear PWM interrupt flag
-	IEC5bits.PWM1IE = 0;	    //disable PWM interrupts
-
-    PTCON = 0x8000;             // Enable PWM for center aligned operation	
-
-    // SEVTCMP: Special Event Compare Count Register 
-    // Phase of ADC capture set relative to PWM cycle: 0 offset and counting up
-	SEVTCMP = 0;
-*/
-
-	// ============= ADC - Measure Current & Pot ======================
-    // ADC setup for simultanous sampling on 
-    //      CH0=AN13, CH1=CMP1, CH2=CMP2, CH3=CMP3. 
-    // Sampling triggered by Timer3 and stored in signed fractional form.
-    // Signed fractional (DOUT = sddd dddd dd00 0000)
-    /*
-    AD1CON1bits.FORM = 3;    
-	// Timer3 overflow ends sampling and starts conversion
-	AD1CON1bits.SSRC = 3;
-	AD1CON1bits.SSRCG = 0;
-    // Simultaneous Sample Select bit (only applicable when CHPS = 01 or 1x)
-    // Samples CH0, CH1, CH2, CH3 simultaneously (when CHPS = 1x)
-    // Samples CH0 and CH1 simultaneously (when CHPS = 01)
-    AD1CON1bits.SIMSAM = 1;  
-    // Sampling begins immediately after last conversion completes. 
-    // SAMP bit is auto set.
-    AD1CON1bits.ASAM = 1;  
-
-
-    AD1CON2 = 0;
-    // Samples CH0, CH1, CH2, CH3 simultaneously (when CHPS = 1x)
-    AD1CON2bits.CHPS = 2;  
-
-
-    AD1CON3 = 0;
-    // A/D Conversion Clock Select bits = 6 * Tcy
-    AD1CON3bits.ADCS = 8;  
-
-    */
-            
-     /* ADCHS: ADC Input Channel Select Register */
-    /*
-    AD1CHS0 = 0;
-    // CH0 is AN13 for POT
-    AD1CHS0bits.CH0SA = 13;
-
-   // CH1 positive input is CMP0, CH2 positive input is CMP1, CH3 positive input is CMP2
-    AD1CHS123bits.CH123SA = 1;
-    
-     */
- /* ADCSSL: ADC Input Scan Select Register */
-    /*
-    AD1CSSL = 0;
-
-    // Turn on A/D module
-    AD1CON1bits.ADON = 1;
-
-	DDelay();
-    */
-    //Fault enabled 
-    /*
-    FCLCON1 = 0x005C;           //Fault enabled Fault SRC - Comparator 4 O/P
-	FCLCON2 = 0x005C;           //Fault enabled Fault SRC - Comparator 4 O/P
-	FCLCON3 = 0x005C;           //Fault enabled Fault SRC - Comparator 4 O/P
-     */
-    
+    // ============= Global Interrupts ======================
     INTERRUPT_GlobalEnable();
 }
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
