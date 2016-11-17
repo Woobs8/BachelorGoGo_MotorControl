@@ -1,42 +1,7 @@
 #ifndef USERPARMS_H
 #define USERPARMS_H
 
-/**********************************************************************
-* © 2012 Microchip Technology Inc.
-*
-* SOFTWARE LICENSE AGREEMENT:
-* Microchip Technology Incorporated ("Microchip") retains all ownership and 
-* intellectual property rights in the code accompanying this message and in all 
-* derivatives hereto.  You may use this code, and any derivatives created by 
-* any person or entity by or on your behalf, exclusively with Microchip's
-* proprietary products.  Your acceptance and/or use of this code constitutes 
-* agreement to the terms and conditions of this notice.
-*
-* CODE ACCOMPANYING THIS MESSAGE IS SUPPLIED BY MICROCHIP "AS IS".  NO 
-* WARRANTIES, WHETHER EXPRESS, IMPLIED OR STATUTORY, INCLUDING, BUT NOT LIMITED 
-* TO, IMPLIED WARRANTIES OF NON-INFRINGEMENT, MERCHANTABILITY AND FITNESS FOR A 
-* PARTICULAR PURPOSE APPLY TO THIS CODE, ITS INTERACTION WITH MICROCHIP'S 
-* PRODUCTS, COMBINATION WITH ANY OTHER PRODUCTS, OR USE IN ANY APPLICATION. 
-*
-* YOU ACKNOWLEDGE AND AGREE THAT, IN NO EVENT, SHALL MICROCHIP BE LIABLE, WHETHER 
-* IN CONTRACT, WARRANTY, TORT (INCLUDING NEGLIGENCE OR BREACH OF STATUTORY DUTY), 
-* STRICT LIABILITY, INDEMNITY, CONTRIBUTION, OR OTHERWISE, FOR ANY INDIRECT, SPECIAL, 
-* PUNITIVE, EXEMPLARY, INCIDENTAL OR CONSEQUENTIAL LOSS, DAMAGE, FOR COST OR EXPENSE OF 
-* ANY KIND WHATSOEVER RELATED TO THE CODE, HOWSOEVER CAUSED, EVEN IF MICROCHIP HAS BEEN 
-* ADVISED OF THE POSSIBILITY OR THE DAMAGES ARE FORESEEABLE.  TO THE FULLEST EXTENT 
-* ALLOWABLE BY LAW, MICROCHIP'S TOTAL LIABILITY ON ALL CLAIMS IN ANY WAY RELATED TO 
-* THIS CODE, SHALL NOT EXCEED THE PRICE YOU PAID DIRECTLY TO MICROCHIP SPECIFICALLY TO 
-* HAVE THIS CODE DEVELOPED.
-*
-* You agree that you are solely responsible for testing the code and 
-* determining its suitability.  Microchip has no obligation to modify, test, 
-* certify, or support the code.
-*
-******************************************************************************/
-
-
 /* Bidirectional functioning */
-/* For DEMO purpose, a special definition enables bidirectional functioning */
 /* Activating the macro below, a speed reverse will be possible */
 /* turning the potentiometer across the median point */
 /* In this mode the speed doubling is no longer possible */
@@ -55,154 +20,27 @@
 
 /* if TUNING was define, then the ramp speed is needed: */
 #ifdef TUNING
-    #define TUNING_DELAY_RAMPUP   0xF      /* the smaller the value, the quicker the ramp */
+    #define TUNING_DELAY_RAMPUP   0xFF      /* the smaller the value, the quicker the ramp */
 #endif
 
 
 /* open loop continuous functioning */
 /* closed loop transition disabled  */
-#undef OPEN_LOOP_FUNCTIONING
+#define OPEN_LOOP_FUNCTIONING 2
 
 
 /* definition for torque mode - for a separate tuning of the current PI
  controllers, tuning mode will disable the speed PI controller */
-#undef TORQUE_MODE
+#define TORQUE_MODE 1
 
 
-
-/* static snapshots can be taken activating the SNAPSHOT definition */
-/* this feature is available only in DEBUG mode of the project */
-/* load DMCI GUI from MPLAB - Tools tab 
-Please consult DMCI help by pressing Help button on DMCI window for a
-complete description of DMCI tool.
-Using dedicated open button in DMCI window load dmci_snapshot.dmci 
-setup file from the AN1292 project’s folder.
-It contains in the Dynamic data view tab the proper variables setup */
-/* static snapshots are captured running the code, and, when halt button
-from the Debug toolbar is pressed, the DMCI graph windows are updated with
-the captured data */
-/* consult debug.c API for calling the specific SNAPSHOT debug functions:
-   DBG_Init(void)	- debug initialization
-   DBG_SnapStart(void) - start of SNAPSHOT trigger
-   DBG_SnapUpdate(void) - SNAPSHOT variables update 
-   These functions are called in pmsm.c */
-/* 
-For captured data setup please check: 
-"DEFINITIONS FOR SNAP and RTDM captured variables"
-section in this file 
-*/
-/* to enable static snapshot, define the folowing line */  
-#undef SNAPSHOT
-
-/* undefine the line below for RTDM control demo */
-//************** Real Time Data Monitor, RTDM *******************
-
-#undef RTDM		// This definition enabled Real Time Data Monitor, UART interrupts
-					// to handle RTDM protocol, and array declarations for buffering
-					// information in real time
-
-#undef DMCI_DEMO	// Define this if a demo with DMCI is done. Start/stop of motor
-					// and speed variation is done with DMCI instead of push button
-					// and POT. Undefine "DMCI_DEMO" is user requires operating
-					// this application with no DMCI
-/* Real Time Debug Monitor enable - if activated, RTDM will allow real time
- control and monitoring of the embedded side from host DMCI interface */
-/*
-IMPORTANT:
-___________________--__________--_____________________________________
-Communication between the host computer and the target device (dsPIC33EP)
-may fail due to noisy environment, real time specificity of the system 
-or other unpredictable causes. 
-Since the host computer is used to completely control the target device,
-in such failure cases, use the RESET button on MCHV module to stop the 
-execution and stop the motor.
-___________________--__________--_____________________________________
-
-Short usage guide 
-(please consult the http://ww1.microchip.com/downloads/en/DeviceDoc/70567A.pdf
-for detailed information on RTDM and its usage):
-Open DMCI- Data Monitor and Control Interface window from the 
-MPLAB’s Tools tab. Using afferent open pictogram, load dmci_rtdm.dmci
-setup file from the AN1292 project’s folder. Within the DMCI window’s
-frame, the following controls are available:
-1/Boolean DMCIFlags.StartStop – used for start/stop  the motor
-2/ Slider SpeedReference – used for reference speed modification
-3/ Boolean DMCIFlags.Recorder – used for triggering a new sample of 
-measured variables
-4/ Slider SnapShotDelay – used for sample rate modification of 
-the measured variables
-5/ Graph 1-4 – Graphs of the measured variables: A phase current, 
-q-axis current, estimated speed, estimated angle 
-Running the application note software will connect the target
-MCHV board to the host DMCI application as specified in above indicated 
-User’s Guide.  
-Suggested usage guide: 
-1/ Run the program using Run button in Dynamic Data Input DMCI child window
-– allow few seconds for communication protocol to be established without
-issuing any other command
-2/ Run DMCI tab – Remote communication menu, which should indicate 
-connection status as DETECTED (if it doesn’t, please refer to the 
-above indicated User guide for troubleshooting). Close the DMCI Remote 
-Communication Properties window by pressing OK acknowledging the 
-detected communication.
-3/ Press Run Time Update button in Dynamic Data Input DMCI child window – 
-this will update the host DMCI GUI with the initial setup already existing 
-on target device
-4/ Adjust the speed reference using the afferent Slider SpeedReference 
-to a value of roughly 5000 (please note that both positive and negative 
-speed references can be set, so bidirectional functioning is selected 
-by default with DMCI_DEMO)
-5/ Press Start/Stop button, switching it from OFF state to ON state 
-using afferent Boolean DMCIFlags.StartStop button in Dynamic Data Input 
-DMCI child window –  immediately the motor will start running
-6/ Press Boolean DMCIFlags.Recorder in in Dynamic Data Input DMCI child 
-window in order to trigger a sample of the measured variables(the button 
-should be in ON state)
-7/ Press Run Time Update button in Dynamic Data Input DMCI child window 
-– this will update the host DMCI GUI with the snapped data in target device.
-8/ Use Automated Event Control button to have steps 6/, 7/ executed 
-automatically at 1 second period 
-9/ Vary the reference speed, vary the snap shot delay, etc.
-10/ Press Start/Stop button, switching it from ON state to OFF state 
-using afferent Boolean DMCIFlags.StartStop button in Dynamic Data Input 
-DMCI child window –  immediately the motor will stop running
-*/
-/* consult debug.c API for calling the specific RTDM functions:
-   DBG_Init(void)	- RTDM initialization
-   DBG_SyncComm(void) - RTDM syncrho target and host in pooling mode
-   DBG_SnapUpdate(void) - RTDM variables update 
-   These functions are called in pmsm.c */
-/* 
-For captured data setup please check: 
-"DEFINITIONS FOR SNAP and RTDM captured variables"
-section in this file 
-*/
-
-/****************************************************/
-/* DEFINITIONS FOR SNAP and RTDM captured variables */
-/****************************************************/
-
-    //#include "park.h"
-    //#include "estim.h"
-    extern tParkParm   ParkParm;       /* park transform params */
-    extern tEstimParm 	EstimParm;     /* estim params */
-    
-    #define DATA_BUFFER_SIZE 50  //Size in 16-bit Words of the snap */
-                                  // the value depends on the dsPIC mem
-    #define SNAPDELAY	5 // In number of PWM Interrupts
-    #define	SNAP1		ParkParm.qIa     // snap captures
-    #define	SNAP2		ParkParm.qIq
-    #define SNAP3		EstimParm.qVelEstim
-    #define SNAP4		EstimParm.qRho
-
-/****************************************************/
 
 
 #define LOOPTIME_SEC  0.00005           // PWM Period - 50 uSec, 20Khz PWM
-#define	DISPLOOPTIME_SEC	0.100		// button polling loop period in sec
-#define DEADTIME_SEC  0.000002         // Dead time in seconds - 2us
+#define	SPEED_POLL_LOOPTIME_SEC	10   // button polling loop period in sec
+#define DEADTIME_SEC  0.0000004          // Dead time in seconds - 2us
 
-#define PWM_DT_ERRATA
+#undef PWM_DT_ERRATA
 
 #define DDEADTIME      (unsigned int)(DEADTIME_SEC*FCY_HZ)	// Dead time in dTcys
 
@@ -219,26 +57,23 @@ section in this file
  is getting reverse sense from LEMs (initialy designed for). */
 /* the value of Q15(0.5) represents a 1 multiplication. */
 
-#define KPOT   Q15(0.5)  /* scaling factor for pot */
-#define KCURRA Q15(-0.5) /* scaling factor for current phase A */
-#define KCURRB Q15(-0.5) /* scaling factor for current phase B */
+#define K_BUSVOLTAGE   Q15(0.5)  /* scaling factor for pot */
+#define K_CURRA Q15(-0.5) /* scaling factor for current phase A */
+#define K_CURRB Q15(-0.5) /* scaling factor for current phase B */
+#define K_CURRC Q15(-0.5) /* scaling factor for current phase B */
 
-
-
-//**************  support xls file definitions begin **************
-/* the following values are given in the xls attached file */
 
 //**************  Motor Parameters **************
 /* motor's number of pole pairs */
-#define NOPOLESPAIRS 5
+#define NOPOLESPAIRS 2
 /* Nominal speed of the motor in RPM */
-#define NOMINAL_SPEED_RPM    2800 // Value in RPM
+#define NOMINAL_SPEED_RPM    9000 // Value in RPM
 /* Maximum speed of the motor in RPM - given by the motor's manufacturer */
-#define MAXIMUM_SPEED_RPM    5300 // Value in RPM  
+#define MAXIMUM_SPEED_RPM    10000 // Value in RPM  
 
 
 
-#define NORM_CURRENT_CONST     0.000121
+#define NORM_CURRENT_CONST     0.00121
 /* normalized ls/dt value */
 #define NORM_LSDTBASE 1460
 /* normalized rs value */
@@ -246,32 +81,33 @@ section in this file
 /* the calculation of Rs gives a value exceeding the Q15 range so,
 the normalized value is further divided by 2 to fit the 32768 limit */
 /* this is taken care in the estim.c where the value is implied */
+
 /* normalized inv kfi at base speed */
 #define NORM_INVKFIBASE  7956
 /* the calculation of InvKfi gives a value which not exceed the Q15 limit */
 /* to assure that an increase of the term with 5 is possible in the lookup table */
 /* for high flux weakening the normalized is initially divided by 2 */
 /* this is taken care in the estim.c where the value is implied */
+
 /* normalized dt value */
 #define NORM_DELTAT  1790
 
 // Limitation constants 
 /* di = i(t1)-i(t2) limitation */ 
 /* high speed limitation, for dt 50us */
+
 /* the value can be taken from attached xls file */
 #define D_ILIMIT_HS 1502
 /* low speed limitation, for dt 8*50us */
 #define D_ILIMIT_LS 6117
-
-//**************  support xls file definitions end **************
-
 
 // Filters constants definitions  
 /* BEMF filter for d-q components @ low speeds */
 #define KFILTER_ESDQ 1200
 /* BEMF filter for d-q components @ high speed - Flux Weakening case */
 #define KFILTER_ESDQ_FW 164
-/* estimated speed filter constatn */
+
+/* estimated speed filter constant */
 #define KFILTER_VELESTIM 2*374
 
 
@@ -291,13 +127,14 @@ the normalized value is further divided by 2 to fit the 32768 limit */
 /* the following values depends on the PWM frequency, */
 /* lock time is the time needed for motor's poles alignment 
  before the open loop speed ramp up */
-#define LOCK_TIME 4000 // This number is: 20,000 is 1 second.
+
+#define LOCK_TIME 10000 // This number is: 20,000 is 1 second.
 /* open loop speed ramp up end value */
-#define END_SPEED_RPM 1000 // Value in RPM
+#define END_SPEED_RPM 875 // Value in RPM
 /* open loop acceleration */
-#define OPENLOOP_RAMPSPEED_INCREASERATE 10
+#define OPENLOOP_RAMPSPEED_INCREASERATE 15
 /* open loop q current setup - */
-#define Q_CURRENT_REF_OPENLOOP NORM_CURRENT(1.41)
+#define Q_CURRENT_REF_OPENLOOP NORM_CURRENT(3)
 
 /* in case of the potentimeter speed reference, a reference ramp
  is needed for assuring the motor can follow the reference imposed */

@@ -37,7 +37,7 @@
 
 //--------------------- Common stuff for C routines ---------------------
 
-#include <p33Exxxx.h>
+
 typedef unsigned short WORD;
 typedef signed int SFRAC16;
 typedef unsigned char  BYTE;

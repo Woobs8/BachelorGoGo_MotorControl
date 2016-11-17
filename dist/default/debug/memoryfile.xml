@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <project>
-  <executable name="dist/default/debug/Bachelor_Motor_Control.X.debug.elf">
+  <executable name="dist/default/debug/BachelorGoGo_MotorControl.debug.elf">
     <memory name="data">
       <units>bytes</units>
       <length>16384</length>
-      <used>214</used>
-      <free>16170</free>
+      <used>12938</used>
+      <free>3446</free>
     </memory>
     <memory name="program">
       <units>bytes</units>
       <length>131298</length>
-      <used>7521</used>
-      <free>123777</free>
+      <used>15630</used>
+      <free>115668</free>
     </memory>
   </executable>
 </project>

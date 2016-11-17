@@ -18,6 +18,21 @@
 #define DEAD_TIME_REGISTER (unsigned int)(DEAD_TIME_SEC*FOSC)
 #define PWM_CalcDutyCycleRegisterValue(PWMDutyCycle) ((phase*PWMDutyCycle)>>15)
 
+#define PWM_ON(void)  (PTCON |= 0x8000)
+#define PWM_OFF(void) (PTCON &= ~(0x8000))
+#define PWM_FLT32_FAULT_SRC         (0b1111)
+#define PWM_FAULT_ACTIVE_LOW        (0b1)
+#define PWM_FAULT_LATCHED_OUTPUT_TO_FLTDAT (0b00)
+#define PWM_FAULT_INPUT_DISABLED (0b11)
+#define PWMxH_AND_PWMxL_INACTIVER (0b0) 
+#define PWM_FAULT_INTERRUPT_ENABLE  1
+#define PWM_FAULT_INTERRUPT_DISABLE  0
+#define PWM_EDGE_ALIGNED_MODE  0
+#define PWM_CENTER_ALIGNED_MODE  1
+#define PWM_INDEPENDANT_TIME_BASE_MODE_ENABLE (1)
+#define PWM_CONTROLS_PWMxH_PINS 1
+#define PWM_CONTROLS_PWMxL_PINS 1
+#define PWM_DTRx_IGNORED 0
 
 #ifdef	__cplusplus
 extern "C" {
@@ -41,6 +56,8 @@ void PWM_Initialize(uint16_t PWMFreq );
 void PWM_Start(void);
 void PWM_Stop(void);
 void PWM_SetDutyCycles(uint16_t PWM1DutyCycle, uint16_t PWM2DutyCycle, uint16_t PWM3DutyCycle);
+void PWM_Start_Fault();
+void PWM_Stop_Fault();
 uint16_t PWM_CalcPeriodRegisterValue(uint16_t PWMFreq);
 uint16_t dutyCyclePDC1(uint16_t, uint16_t);
 uint16_t dutyCyclePDC2(uint16_t, uint16_t);

@@ -191,6 +191,9 @@ void setUp_DRV8305(void){
         Setup_IC_OPERATION_MAP.EN_SNS_CLAMP                 = 0b1;  // Sense amplifier clamp is enabled ~ 3.3V
         Setup_IC_OPERATION_MAP.WD_DLY                       = 0b01; // Watchdog delay 20ms
         Setup_IC_OPERATION_MAP.DIS_SNS_OCP                  = 0b0;  // Low side Over Current Protection Enable
+        #ifdef NO_MOSFETS
+            Setup_IC_OPERATION_MAP.DIS_SNS_OCP              = 0b1;  // Low side Over Current Protection Disable for testing
+        #endif
         Setup_IC_OPERATION_MAP.WD_EN                        = 0b0;  // Watchdog disabled
         Setup_IC_OPERATION_MAP.SLEEP                        = 0b0;  // Device Awake
         Setup_IC_OPERATION_MAP.CLR_FLTS                     = 0b0;  // Normal operation. If fault is received the fault can be cleard in 
@@ -249,10 +252,13 @@ void setUp_DRV8305(void){
         VDS_SENSE_CONTROL_MAP Setup_VDS_SENSE_CONTROL_MAP;
         Setup_VDS_SENSE_CONTROL_MAP.VDS_LEVEL               = 0b01001; // b'01001 - 0.175 V
                                                                     // Over Current = 0.175 V / 0,002ohm = 87,5A
-        Setup_VDS_SENSE_CONTROL_MAP.VDS_MODE                = 0b000;// VDS mode
+        Setup_VDS_SENSE_CONTROL_MAP.VDS_MODE                = 0b001;// VDS mode
                                                                     // b'000 - Latched shut down when over-current detected
                                                                     // b'001 - Report only when over current detected
                                                                     // b'010 - VDS protection disabled (no overcurrent sensing or reporting)
+#ifdef NO_MOSFETS
+            Setup_VDS_SENSE_CONTROL_MAP.VDS_MODE                = 0b010;  // For testing
+#endif
 
         uint16_t cmd_VDS_SENSE_CONTROL_MAP = getDataString_DRV8305_VDS_SENSE_CONTROL(true,Setup_VDS_SENSE_CONTROL_MAP);                                                                
         sendCommand_DRV8305(cmd_VDS_SENSE_CONTROL_MAP);

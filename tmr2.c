@@ -49,6 +49,7 @@
 */
 
 #include <xc.h>
+#include "periph.h"
 #include "tmr2.h"
 
 /**
@@ -88,11 +89,15 @@ void TMR2_Initialize (void)
 {
     //TMR4 0; 
     TMR2 = 0x0;
-    //Period = 0.0000004571 s; Frequency = 70000000 Hz; PR4 4; 
-    PR2 = 0x4;
+
+    
     //TCKPS 1:8; TON enabled; TSIDL disabled; TCS FOSC/2; TGATE disabled; 
     T2CON = 0x8010;
-    T2CONbits.TCKPS = 2; // Prescaler must be 64
+    T2CONbits.TCKPS = 1; // Prescaler must be 8
+    
+    //Period =  
+    
+    PR2 = 200 / (FCY / 0xFFFF) ;
     
 	
     tmr2_obj.timerElapsed = false;

@@ -1,6 +1,3 @@
-#ifndef PERIPH_H
-#define PERIPH_H
-
 /**********************************************************************
 * © 2012 Microchip Technology Inc.
 *
@@ -33,22 +30,60 @@
 * certify, or support the code.
 *
 ******************************************************************************/
-//#define TCY_SEC         1
-#define FCY_HZ          70000000            // Instruction cycle frequency (Hz)
-#define FCY             70000000UL
-#define FOSC            140000000UL
+#ifndef PERIPH_H
+#define PERIPH_H
 
+#include <stdbool.h>
 #include "general.h"   /* includes types definitions used */
+#include "userparams.h"
+
+#define FCY_HZ                      35000000            // Instruction cycle frequency (Hz)
+#define FCY                         35000000UL
+#define FOSC                        2*FCY
+#define TCY_SEC                     (1.0/FCY_HZ)          // Instruction cycle period (sec)
+
+#define LOOPTIME_TCY                (unsigned int)(LOOPTIME_SEC/TCY_SEC)   // Basic loop period in units of Tcy
+
+#define RED_LED_ON()              (LATAbits.LATA8 = 1)
+#define RED_LED_TOGGLE()          (LATAbits.LATA8 ^= 1)
+#define RED_LED_OFF()             (LATAbits.LATA8 = 0)
+
+#define YELLOW_LED_TOGGLE()         (LATBbits.LATB9 ^= 1)
+#define YELLOW_LED_OFF()            (LATBbits.LATB9 = 0)
+#define YELLOW_LED_ON()             (LATBbits.LATB9 = 1)
+
+#define GREEN_LED_TOGGLE()           (LATCbits.LATC6 ^= 1)
+#define GREEN_LED_OFF()              (LATCbits.LATC6 = 0)
+#define GREEN_LED_ON()               (LATCbits.LATC6 = 1)
+
+#define BLUE_LED_TOGGLE()            (LATBbits.LATB8 ^= 1)
+#define BLUE_LED_OFF()               (LATBbits.LATB8 = 0)
+#define BLUE_LED_ON()                (LATBbits.LATB8 = 1)
+
+#define ENABLE_GATES()              (LATCbits.LATC9 = 1)
+#define DISABLE_GATES()             (LATCbits.LATC9 = 0)
+
 #include "spi.h"   /* includes types definitions used */
+#include "adc.h"
 #include "interrupt_manager.h"
 #include "ic1.h"
 #include "tmr2.h"
 #include "pwm.h"
+#include "dma.h"
+#include "tmr2.h"
+#include "i2c.h"
+#include "drv8305.h"
 
-//#define TCY_SEC         (1.0/FCY_HZ)          // Instruction cycle period (sec)
-//#define LOOPTIME_TCY    (unsigned int)(LOOPTIME_SEC/TCY_SEC)   // Basic loop period in units of Tcy
+typedef struct{
+    bool GREEN_ON;
+    bool YELLOW_ON;
+    bool BLUE_ON;
+    bool RED_ON;
+}LEDs;
+
+extern volatile LEDs  LEDbits;
 
 void InitPeriph(void);
-//void ResetPeriph(void);
+void ResetPeriph(void);
 
-#endif
+#endif // PERIPH_H

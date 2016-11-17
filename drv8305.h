@@ -31,6 +31,8 @@
 #ifndef _DRV8305_H
 #define	_DRV8305_H
 
+//#define NO_MOSFETS (1) // COMMENT OUT IF MOSFETS ARE ON THE PCB
+
 #include <xc.h> // include processor files - each processor file is guarded.  
 #include "general.h"
 #include <xc.h>
@@ -43,7 +45,6 @@
 
 #define CHECK_BIT(var,pos) ( ( (var) & (1<<(pos)) ) >> pos  )
 #define EXTRACT_BITS(var,high,low) ( ( ( var & ( ( 1<<(high+1) )-1) ) >> low) )
-
 
 // TODO Insert C++ class definitions if appropriate
 #define WARNINGS_AND_WATCHDOG_RESET_ADR     0x1

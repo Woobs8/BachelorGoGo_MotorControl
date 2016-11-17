@@ -3,12 +3,17 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/C:/Users/rasmus/MPLABXProjects/Bachelor_Motor_Control.X/nbproject/Makefile-impl.mk</file>
-            <file>file:/C:/Users/rasmus/MPLABXProjects/Bachelor_Motor_Control.X/drv8305.h</file>
-            <file>file:/C:/Users/rasmus/MPLABXProjects/Bachelor_Motor_Control.X/drv8305.c</file>
-            <file>file:/C:/Users/rasmus/MPLABXProjects/Bachelor_Motor_Control.X/spi.c</file>
-            <file>file:/C:/Users/rasmus/MPLABXProjects/Bachelor_Motor_Control.X/Bachelor_Motor_Control.c</file>
-            <file>file:/C:/Users/rasmus/MPLABXProjects/Bachelor_Motor_Control.X/nbproject/Makefile-default.mk</file>
+            <file>file:/C:/Users/rasmus/MPLABXProjects/BachelorGoGo_MotorControl/park.h</file>
+            <file>file:/C:/Users/rasmus/MPLABXProjects/BachelorGoGo_MotorControl/spi.c</file>
+            <file>file:/C:/Users/rasmus/MPLABXProjects/BachelorGoGo_MotorControl/meascurr.s</file>
+            <file>file:/C:/Users/rasmus/MPLABXProjects/BachelorGoGo_MotorControl/trig.s</file>
+            <file>file:/C:/Users/rasmus/MPLABXProjects/BachelorGoGo_MotorControl/Bachelor_Motor_Control.c</file>
+            <file>file:/C:/Users/rasmus/MPLABXProjects/BachelorGoGo_MotorControl/nbproject/Makefile-default.mk</file>
+            <file>file:/C:/Users/rasmus/MPLABXProjects/BachelorGoGo_MotorControl/adc.c</file>
+            <file>file:/C:/Users/rasmus/MPLABXProjects/BachelorGoGo_MotorControl/nbproject/Makefile-impl.mk</file>
+            <file>file:/C:/Users/rasmus/MPLABXProjects/BachelorGoGo_MotorControl/pi.c</file>
+            <file>file:/C:/Users/rasmus/MPLABXProjects/BachelorGoGo_MotorControl/drv8305.c</file>
+            <file>file:/C:/Users/rasmus/MPLABXProjects/BachelorGoGo_MotorControl/userparams.h</file>
         </group>
     </open-files>
 </project-private>
