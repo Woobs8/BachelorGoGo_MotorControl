@@ -6,7 +6,7 @@
 
 typedef struct {
 	int		qIdRef;          // d-current reference
-	int		qFwOnSpeed;      // flux weakening on speed -
+	long int		qFwOnSpeed;      // flux weakening on speed -
 	int		qIndex;          // lookup tables index
     int		qFwCurve[18];	 // Curve for magnetizing current variation with speed
     int		qInvKFiCurve[18];// Curve for InvKfi constant InvKfi = Omega/BEMF variation with speed

@@ -3,6 +3,26 @@
  * Author: rasmus
  *
  * Created on November 2, 2016, 11:22 AM
+ * Rød motor
+31mH   @ 120Hz
+0,088 ohm
+54,4uH @ 1000Hz
+0,064 ohm
+
+Calibre
+@1000hz
+0,9uH
+0,017ohm
+
+Ny motor
+@ 1000hz
+0,071ohm
+14,8uH
+
+@ 120Hz
+0,062ohm
+19mH
+
  */
 
 #include "xc.h"
@@ -11,6 +31,7 @@
 
 #include "periph.h"
 #include "drv8305.h"
+//#include "ic1.h"
 
 #include "readadc.h" /* adc read functions */
 #include "meascurr.h" /* current read functions */
@@ -25,6 +46,7 @@
 #include "fdweak.h" /* flux weakening routines */
 
 #include <libq.h> /* q15 sqrt function use */
+#include <math.h>
 
 
 
@@ -61,7 +83,7 @@ tReadADCParm ReadADCParm;   /* adc values structure */
 
 tSVGenParm SVGenParm;       /* SVM structure */
 
-float testref = 0.8;
+float testref = 0.7;
 /******************************************************************************/
 /******************************************************************************/
 /*                                                                            */
@@ -87,8 +109,12 @@ WORD iDispLoopCnt; /* display loop count */
 /* nominal motor speed converted into electrical speed */
 #define NOMINALSPEED_ELECTR NOMINAL_SPEED_RPM*NOPOLESPAIRS
 
+
+
 /* end speed conveted to fit the startup ramp */
-#define END_SPEED (END_SPEED_RPM * NOPOLESPAIRS * LOOPTIME_SEC * 65536 / 60.0)*1024
+#define START_UP_WAIT_SHIFT 7
+#define START_UP_WAIT_DEVISION powf(2,START_UP_WAIT_SHIFT)
+#define END_SPEED (END_SPEED_RPM * NOPOLESPAIRS * LOOPTIME_SEC * 65536 / 60.0)*(START_UP_WAIT_DEVISION)
 /* end speed of open loop ramp up converted into electrical speed */
 #define ENDSPEED_ELECTR END_SPEED_RPM*NOPOLESPAIRS
 
@@ -119,6 +145,8 @@ static void DoControl( void );
 static void CalculateParkAngle(void);
 int Q15SQRT(int);
 
+            //pIbBuf[iDispLoopCnt%3000] = EstimParm.qRho;
+            //pIbBuf[iDispLoopCnt%3000] = ParkParm.qAngle;
 int16_t pIbBuf[3000] = {0};
 int16_t pIaBuf[3000] = {0};
 
@@ -235,12 +263,7 @@ static void DoControl( void )
 {
     /* temporary vars for sqrt calculation of q reference */
     int temp_qref_pow_q15;
-
-#ifdef TUNING
-    static int tuning_add_rampup = 0; // tuning speed ramp value 
-    static int tuning_delay_rampup;   // tuning speed ramp increase delay
-#endif
-
+    
     if( uGF.Bit.OpenLoop )
     {
         // OPENLOOP:  force rotating angle,Vd,Vq
@@ -257,13 +280,19 @@ static void DoControl( void )
 			/* reinit vars for initial speed ramp */
 			Startup_Lock = 0;
 			Startup_Ramp = 0;
-#ifdef TUNING
-            tuning_add_rampup = 0;
-#endif
+            
         }
         
-        /* speed reference */
-		CtrlParm.qVelRef = Q_CURRENT_REF_OPENLOOP;
+        /* If Rotor Lock use Q_CURRENT_REF_LOCK */
+        if (Startup_Lock < LOCK_TIME){
+            CtrlParm.qVelRef = Q_CURRENT_REF_LOCK;
+        }
+	    /* If Open loop ramp use Q_CURRENT_REF_OPENLOOP */
+		else{
+            CtrlParm.qVelRef = Q_CURRENT_REF_OPENLOOP;
+        }
+
+
         /* q current reference is equal to the vel reference */
         /* while d current reference is equal to 0 */
         /* for maximum startup torque, set the q current to maximum acceptable */
@@ -291,23 +320,19 @@ static void DoControl( void )
         /* if change speed indication, double the speed */
         if(uGF.Bit.ChangeSpeed)
 	    {
-		    /* read not signed ADC */    
-		    //ReadADC0( &ReadADCParm );
-            ReadADCParm.qAnRef=Q15(testref);//(ReadADCParm.qADValue);	
-            if(ReadADCParm.qAnRef >MAXIMUMSPEED_ELECTR)
+            ReadADCParm.qAnRef = Q15(mIC_DUTY_CYCKLE);//(ReadADCParm.qADValue);	
+            if(ReadADCParm.qAnRef > MAXIMUMSPEED_ELECTR)
                 ReadADCParm.qAnRef = MAXIMUMSPEED_ELECTR;	    
 	    } 
         else {
-		    /* unsigned values */
-		    //ReadADC0( &ReadADCParm );
 		    /* Q15 values are shifted with 2 */
-		    ReadADCParm.qAnRef=Q15(testref)>>2;//ReadADCParm.qADValue>>2;		// Speed ref max value +-8190
+		    ReadADCParm.qAnRef=Q15(mIC_DUTY_CYCKLE)>>2;//ReadADCParm.qADValue>>2;		// Speed ref max value +-8190
 	    }
 
         // Ramp generator to limit the change of the speed reference
         // the rate of change is defined by CtrlParm.qRefRamp
         
-    	CtrlParm.qDiff=CtrlParm.qVelRef - 0;//ReadADCParm.qAnRef;		
+    	CtrlParm.qDiff=CtrlParm.qVelRef - ReadADCParm.qAnRef;		
         // Speed Ref Ramp
 		if (CtrlParm.qDiff < 0)
 		{
@@ -324,32 +349,15 @@ static void DoControl( void )
 		/* directly from the pot */
 		if (_Q15abs(CtrlParm.qDiff) < (CtrlParm.qRefRamp<<1))
 		{
-	    	CtrlParm.qVelRef = 0;//ReadADCParm.qAnRef;
+	    	CtrlParm.qVelRef = ReadADCParm.qAnRef;
 		}
-
-        /* tuning is generating a software ramp */
-        /* with sufficiently slow ramp defined by */
-        /* TUNING_DELAY_RAMPUP constant */
-#ifdef TUNING
-        /* if delay is not completed */
-        if(tuning_delay_rampup > TUNING_DELAY_RAMPUP)tuning_delay_rampup = 0;
-        /* while speed less than maximum and delay is complete */
-        if((tuning_add_rampup < (MAXIMUMSPEED_ELECTR - ENDSPEED_ELECTR)) && (tuning_delay_rampup == 0) ) 
-        {
-            /* increment ramp add */
-            tuning_add_rampup++;
-        }
-        tuning_delay_rampup++;
-        /* the reference is continued from the open loop speed up ramp */
-		CtrlParm.qVelRef =   ENDSPEED_ELECTR +  tuning_add_rampup;
-#endif
-	    
+        
+        
         if( uGF.Bit.ChangeMode )
         {
             // just changed from openloop
             uGF.Bit.ChangeMode = 0;
 			PIParmQref.qdSum = (long)CtrlParm.qVqRef << 13;
-
 	    }               
 
 /* if TORQUE MODE skip the speed controller */                
@@ -402,30 +410,21 @@ static void DoControl( void )
 /* The speed calculation assumes a fixed time interval between calculations.  */
 /******************************************************************************/
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
+uint16_t test_var = 0;
 void __attribute__ ( ( interrupt, no_auto_psv ) ) _DMA0Interrupt( void )
 {
     // Reset interrupt flag
     IFS0bits.DMA0IF = 0;
-#undef DEBUG_FOC_ALGORITHM_TIME 
-    
+#undef DEBUG_FOC_ALGORITHM_TIME   
 #ifdef DEBUG_FOC_ALGORITHM_TIME
     // pin toggle for debug
     GREEN_LED_ON();
 #endif    
             
-
-    
     
     // Increment count variable that controls execution
     // of display and button functions.
     iDispLoopCnt++;
-    
-    uint16_t test_curr = (uint16_t)(BufferAdc.Adc1Ch0[0] << 1 ) >> 6; 
-    if(test_curr > 320 );
-        //uGF.Bit.StopFlag = 1;
-    uint16_t test_curr1 = (uint16_t)(BufferAdc.Adc1Ch1[0] << 1 ) >> 6; 
-    if(test_curr1 > 320 );
-        //uGF.Bit.StopFlag = 1;
              
     if( uGF.Bit.RunMotor )
     {
@@ -445,27 +444,25 @@ void __attribute__ ( ( interrupt, no_auto_psv ) ) _DMA0Interrupt( void )
         
         // Calculate qId,qIq from qSin,qCos,qIa,qIb
         ClarkePark();
-        pIaBuf[iDispLoopCnt%3000] = BufferAdc.Adc1Ch1[0];
-        pIbBuf[iDispLoopCnt%3000] = ParkParm.qIq;
+        pIaBuf[iDispLoopCnt%3000] = ParkParm.qIa;
 		        
         // Speed and field angle estimation
         //****************************            
         Estim();
-        
+
         // Calculate control values
         DoControl();
         // Calculate qAngle from QEI Module
 		CalculateParkAngle();
-        
+
         /* if open loop */
 		if(uGF.Bit.OpenLoop == 1)
 		{
-            //LEDbits.YELLOW_ON = true;
 		    /* the angle is given by parkparm */
 		    SincosParm.qAngle = ParkParm.qAngle;
-		} else
+		} else  
 		{
-            //LEDbits.YELLOW_ON = false;
+            test_var++;
 			/* if closed loop, angle generated by estim */
 			SincosParm.qAngle = EstimParm.qRho;
         }
@@ -524,8 +521,9 @@ static void CalculateParkAngle(void)
 	if(uGF.Bit.OpenLoop)	
 	{
 		/* begin wiht the lock sequence, for field alligniament */
-		if (Startup_Lock < LOCK_TIME)
+		if (Startup_Lock < LOCK_TIME){
 			Startup_Lock+=1;
+        }
 	    /* then ramp up till the end speed */
 		else if (Startup_Ramp < END_SPEED)
 			Startup_Ramp+=OPENLOOP_RAMPSPEED_INCREASERATE;
@@ -537,7 +535,7 @@ static void CalculateParkAngle(void)
 #endif
 		}
 		/* the angle set depends on startup ramp */
-		ParkParm.qAngle += (int)(Startup_Ramp >> 10);
+		ParkParm.qAngle += (int)(Startup_Ramp >> START_UP_WAIT_SHIFT);
 	}
 	else /* switched to closed loop */
 	{

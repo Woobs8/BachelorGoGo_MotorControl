@@ -44,7 +44,7 @@ void Estim(void)
     // dIalpha = Ialpha-oldIalpha,  dIbeta  = Ibeta-oldIbeta
     // for lower speed the granularity of differnce is higher - the 
     // difference is made between 2 sampled values @ 8 ADC ISR cycles
-    if (_Q15abs(EstimParm.qVelEstim)<NOMINAL_SPEED_RPM*NOPOLESPAIRS)
+    if ((long int)_Q15abs(EstimParm.qVelEstim)<(long int)NOMINAL_SPEED_RPM*NOPOLESPAIRS)
     {
     
     	EstimParm.qDIalpha	=	(ParkParm.qIalpha-EstimParm.qLastIalphaHS[(EstimParm.qDiCounter-7)&0x0007]);

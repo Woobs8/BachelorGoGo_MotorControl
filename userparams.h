@@ -26,12 +26,13 @@
 
 /* open loop continuous functioning */
 /* closed loop transition disabled  */
-#define OPEN_LOOP_FUNCTIONING 2
+
+//#define OPEN_LOOP_FUNCTIONING
 
 
 /* definition for torque mode - for a separate tuning of the current PI
  controllers, tuning mode will disable the speed PI controller */
-#define TORQUE_MODE 1
+//#define TORQUE_MODE 1
 
 
 
@@ -65,25 +66,25 @@
 
 //**************  Motor Parameters **************
 /* motor's number of pole pairs */
-#define NOPOLESPAIRS 2
+#define NOPOLESPAIRS 3
 /* Nominal speed of the motor in RPM */
-#define NOMINAL_SPEED_RPM    9000 // Value in RPM
+#define NOMINAL_SPEED_RPM    11000 // Value in RPM scaled wíth 2
 /* Maximum speed of the motor in RPM - given by the motor's manufacturer */
-#define MAXIMUM_SPEED_RPM    10000 // Value in RPM  
+#define MAXIMUM_SPEED_RPM   11000 // Value in RPM  
 
 
 
 #define NORM_CURRENT_CONST     0.00121
 /* normalized ls/dt value */
-#define NORM_LSDTBASE 1460
+#define NORM_LSDTBASE 334/128
 /* normalized rs value */
-#define NORM_RS  12990
+#define NORM_RS  827/2
 /* the calculation of Rs gives a value exceeding the Q15 range so,
 the normalized value is further divided by 2 to fit the 32768 limit */
 /* this is taken care in the estim.c where the value is implied */
 
 /* normalized inv kfi at base speed */
-#define NORM_INVKFIBASE  7956
+#define NORM_INVKFIBASE  26000
 /* the calculation of InvKfi gives a value which not exceed the Q15 limit */
 /* to assure that an increase of the term with 5 is possible in the lookup table */
 /* for high flux weakening the normalized is initially divided by 2 */
@@ -95,7 +96,6 @@ the normalized value is further divided by 2 to fit the 32768 limit */
 // Limitation constants 
 /* di = i(t1)-i(t2) limitation */ 
 /* high speed limitation, for dt 50us */
-
 /* the value can be taken from attached xls file */
 #define D_ILIMIT_HS 1502
 /* low speed limitation, for dt 8*50us */
@@ -118,7 +118,7 @@ the normalized value is further divided by 2 to fit the 32768 limit */
 /* normally this value should not be modified, but in */
 /* case of fine tuning of the transition, depending on */
 /* the load or the rotor moment of inertia */
-#define INITOFFSET_TRANS_OPEN_CLSD 0x2000
+#define INITOFFSET_TRANS_OPEN_CLSD 0x2000 //10000
 
 /* current transformation macro, used below */
 #define NORM_CURRENT(current_real) (Q15(current_real/NORM_CURRENT_CONST/32768))
@@ -128,13 +128,14 @@ the normalized value is further divided by 2 to fit the 32768 limit */
 /* lock time is the time needed for motor's poles alignment 
  before the open loop speed ramp up */
 
-#define LOCK_TIME 10000 // This number is: 20,000 is 1 second.
+#define LOCK_TIME 5000 // This number is: 20,000 is 1 second.
 /* open loop speed ramp up end value */
-#define END_SPEED_RPM 875 // Value in RPM
+#define END_SPEED_RPM 700 // Value in RPM
 /* open loop acceleration */
-#define OPENLOOP_RAMPSPEED_INCREASERATE 15
+#define OPENLOOP_RAMPSPEED_INCREASERATE 2
 /* open loop q current setup - */
-#define Q_CURRENT_REF_OPENLOOP NORM_CURRENT(3)
+#define Q_CURRENT_REF_LOCK NORM_CURRENT(10)
+#define Q_CURRENT_REF_OPENLOOP NORM_CURRENT(7.5)
 
 /* in case of the potentimeter speed reference, a reference ramp
  is needed for assuring the motor can follow the reference imposed */
@@ -142,13 +143,13 @@ the normalized value is further divided by 2 to fit the 32768 limit */
 
 /* PI controllers tuning values - */
 //******** D Control Loop Coefficients *******
-#define     D_CURRCNTR_PTERM           Q15(0.02)
+#define     D_CURRCNTR_PTERM           Q15(0.01)
 #define     D_CURRCNTR_ITERM           Q15(0.002)
 #define     D_CURRCNTR_CTERM           Q15(0.999)
 #define     D_CURRCNTR_OUTMAX          0x7FFF
 
 //******** Q Control Loop Coefficients *******
-#define     Q_CURRCNTR_PTERM           Q15(0.02)
+#define     Q_CURRCNTR_PTERM           Q15(0.01)
 #define     Q_CURRCNTR_ITERM           Q15(0.002)
 #define     Q_CURRCNTR_CTERM           Q15(0.999)
 #define     Q_CURRCNTR_OUTMAX          0x7FFF

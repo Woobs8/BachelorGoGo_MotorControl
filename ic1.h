@@ -55,6 +55,8 @@
 #include <stdbool.h>
 #include <libpic30.h>
 
+extern float mIC_DUTY_CYCKLE;
+
 #ifdef __cplusplus  // Provide C++ Compatibility
 
     extern "C" {

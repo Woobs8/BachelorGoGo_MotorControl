@@ -106,7 +106,7 @@ MeasCompCurr:
      ;; iOffset += (ADC-Offset)
           add       _MeasCurrParm+ADC_iOffsetLb    
           mov.w     w1,w0
-          addc      _MeasCurrParm+ADC_iOffsetHb   
+	    addc      _MeasCurrParm+ADC_iOffsetHb   
 
           return
 

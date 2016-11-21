@@ -69,7 +69,7 @@
 
 
 static uint16_t         gIC1Mode;
-float mIC_DUTY_CYCKLE = 0;
+float mIC_DUTY_CYCKLE = 0.5;
 float mTORQUE_REF = 0;
 unsigned int mIC_OFFSET = 0;
 uint16_t mIC_MEAS_BUF[IC_MEAS_BUF_LEN];
