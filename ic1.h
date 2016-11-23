@@ -56,6 +56,7 @@
 #include <libpic30.h>
 
 extern float mIC_DUTY_CYCKLE;
+extern short mFOC_REF;
 
 #ifdef __cplusplus  // Provide C++ Compatibility
 
