@@ -37,7 +37,7 @@
 
 
 #define LOOPTIME_SEC  0.00005           // PWM Period - 50 uSec, 20Khz PWM
-#define	SPEED_POLL_LOOPTIME_SEC	10   // button polling loop period in sec
+#define	SPEED_POLL_LOOPTIME_SEC	1       // button polling loop period in sec
 #define DEADTIME_SEC  0.0000004          // Dead time in seconds - 2us
 
 #undef PWM_DT_ERRATA
@@ -68,7 +68,7 @@
 #define NOPOLESPAIRS 3
 /* Nominal speed of the motor in RPM */
 #define RPM_SCALE           1
-#define NOMINAL_SPEED_RPM_NON_SCALED 11000
+#define NOMINAL_SPEED_RPM_NON_SCALED 5000
 #define NOMINAL_SPEED_RPM    NOMINAL_SPEED_RPM_NON_SCALED/(powf(2,RPM_SCALE)) 
 /* Maximum speed of the motor in RPM - given by the motor's manufacturer */
 #define MAXIMUM_SPEED_RPM_NON_SCALED 21000
@@ -90,7 +90,7 @@ the normalized value is further divided by 2 to fit the 32768 limit */
 /* this is taken care in the estim.c where the value is implied */  
 
 /* normalized inv kfi at base speed */
-#define NORM_INVKFIBASE_SCALE 3
+#define NORM_INVKFIBASE_SCALE 4
 #define NORM_INVKFIBASE_NON_SCALED 81164
 #define NORM_INVKFIBASE  (NORM_INVKFIBASE_NON_SCALED/(powf(2,NORM_INVKFIBASE_SCALE)))
 /* the calculation of InvKfi gives a value which not exceed the Q15 limit */
@@ -107,7 +107,7 @@ the normalized value is further divided by 2 to fit the 32768 limit */
 /* the value can be taken from attached xls file */
 #define D_ILIMIT_HS 3277
 /* low speed limitation, for dt 8*50us */
-#define D_ILIMIT_LS 13107
+#define D_ILIMIT_LS 26214
 
 // Filters constants definitions  
 /* BEMF filter for d-q components @ low speeds */
@@ -140,11 +140,11 @@ the normalized value is further divided by 2 to fit the 32768 limit */
 /* open loop speed ramp up end value */
 #define END_SPEED_RPM 1500 // Value in RPM
 /* open loop acceleration */
-#define OPENLOOP_RAMPSPEED_INCREASERATE 2
+#define OPENLOOP_RAMPSPEED_INCREASERATE 3
 /* open loop q current setup - */
-#define START_UP_WAIT_SHIFT 8
-#define Q_CURRENT_REF_LOCK NORM_CURRENT(8)
-#define Q_CURRENT_REF_OPENLOOP NORM_CURRENT(6)
+#define START_UP_WAIT_SHIFT 7
+#define Q_CURRENT_REF_LOCK NORM_CURRENT(10)
+#define Q_CURRENT_REF_OPENLOOP NORM_CURRENT(8)
 
 /* in case of the potentimeter speed reference, a reference ramp
  is needed for assuring the motor can follow the reference imposed */
@@ -152,22 +152,22 @@ the normalized value is further divided by 2 to fit the 32768 limit */
 
 /* PI controllers tuning values - */
 //******** D Control Loop Coefficients *******
-#define     D_CURRCNTR_PTERM           Q15(0.01)
-#define     D_CURRCNTR_ITERM           Q15(0.005)
+#define     D_CURRCNTR_PTERM           Q15(0.008)
+#define     D_CURRCNTR_ITERM           Q15(0.003)
 #define     D_CURRCNTR_CTERM           Q15(0.999)
 #define     D_CURRCNTR_OUTMAX          0x7FFF
 
 //******** Q Control Loop Coefficients *******
-#define     Q_CURRCNTR_PTERM           Q15(0.01)
-#define     Q_CURRCNTR_ITERM           Q15(0.005)
+#define     Q_CURRCNTR_PTERM           Q15(0.008)
+#define     Q_CURRCNTR_ITERM           Q15(0.003)
 #define     Q_CURRCNTR_CTERM           Q15(0.999)
 #define     Q_CURRCNTR_OUTMAX          0x7FFF
 
 //*** Velocity Control Loop Coefficients *****
-#define     SPEEDCNTR_PTERM        Q15(0.7)
+#define     SPEEDCNTR_PTERM        Q15(0.5)
 #define     SPEEDCNTR_ITERM        Q15(0.03)
 #define     SPEEDCNTR_CTERM        Q15(0.999)
-#define     SPEEDCNTR_OUTMAX       0x5000
+#define     SPEEDCNTR_OUTMAX       0x6000
 
 
 //************** Field Weakening **************

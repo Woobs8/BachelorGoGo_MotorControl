@@ -58,18 +58,7 @@ Ny motor
 /*                                                                            */
 /******************************************************************************/
 /******************************************************************************/
-union   {
-        struct
-            {
-            unsigned RunMotor:1;  /* run motor indication */
-            unsigned OpenLoop:1;  /* open loop/clsd loop indication */
-            unsigned ChangeMode:1; /* mode changed indication - from open to clsd loop */
-            unsigned ChangeSpeed:1; /* speed doubled indication */
-            unsigned StopFlag:1;
-            unsigned    :11;
-            }Bit;
-        WORD Word;
-        } uGF;        // general flags
+GENERAL_FLAGS uGF;        // general flags
 
 
 tPIParm     PIParmQ;        /* parms for PI controlers */
@@ -83,7 +72,6 @@ tReadADCParm ReadADCParm;   /* adc values structure */
 
 tSVGenParm SVGenParm;       /* SVM structure */
 
-float testref = 0.7;
 /******************************************************************************/
 /******************************************************************************/
 /*                                                                            */
@@ -96,6 +84,8 @@ unsigned long Startup_Ramp = 0; /* ramp angle variable for initial ramp */
 unsigned int Startup_Lock = 0; /* lock variable for initial ramp */       
 WORD iDispLoopCnt; /* display loop count */
 
+uint8_t STOP_POSTPONE_COUNTER=0;
+uint8_t START_POSTPONE_COUNTER=0;
 
 /******************************************************************************/
 /******************************************************************************/
@@ -121,16 +111,6 @@ WORD iDispLoopCnt; /* display loop count */
 // routine is executed.
 #define	DISPLOOPTIME	(SPEED_POLL_LOOPTIME_SEC/LOOPTIME_SEC)
 
-/* buttons definitions for the current setup */
-#define PINBUTTON1           1//!PORTGbits.RG7
-#define PINBUTTON2           1//!PORTGbits.RG6
-
-/* maximum pot value in sfrac mode 0xFFC0 */
-/* shifted left with 1 meaning 16368 */ 
-#define  MAXPOTVAL_SHL1 16368
-
-
-
 /******************************************************************************/
 /******************************************************************************/
 /*                                                                            */
@@ -143,20 +123,30 @@ static void InitControlParameters(void);
 static void DoControl( void );
 static void CalculateParkAngle(void);
 int Q15SQRT(int);
-#define SNAPSHOT_BUF_SIZE 1700
-int32_t pIbBuf[SNAPSHOT_BUF_SIZE] = {0};
-int32_t pIaBuf[SNAPSHOT_BUF_SIZE] = {0};
+#define SNAPSHOT_BUF_SIZE 3000
+#define SNAP_RATE  3 // PWM wait cyckles between each sample
+                     // 30 = every 1.5ms with 1500 sampes that is 2,25s
+                     //  6 = every 0.5ms with 1000 sampes that is 0.5s
+//int16_t snap_Velocity[SNAPSHOT_BUF_SIZE] = {0};
+//int16_t snap_Velocity_ref[SNAPSHOT_BUF_SIZE] = {0};
+//int16_t snap_Esqf[SNAPSHOT_BUF_SIZE] = {0};
+//int16_t snap_Angle[SNAPSHOT_BUF_SIZE] = {0};
+//int16_t snap_Esdf[SNAPSHOT_BUF_SIZE] = {0};
+//int16_t snap_Iq[SNAPSHOT_BUF_SIZE] = {0};
+//uint32_t snap_count = 0;
+//uint32_t snap_ol_cl_count =0;
+//uint32_t snap_i =0;
 
 int main(void) {
         /* init the peripherals - contain the definitions for config bits */
     /* configure PLL, GPIO, PWM & ADC */
     
     InitPeriph();
-    
+    uGF.Bit.RunMotor  = 0;
     while(1)
         {
         uGF.Word = 0;                   // clear flags
-        LEDbits.RED_ON = false;
+        //LEDbits.RED_ON = false;
         /* setup to openloop */
         uGF.Bit.OpenLoop = 1;
         
@@ -187,37 +177,59 @@ int main(void) {
             // Inital offsets
         	//InitMeasCompCurr( BufferAdc.Adc1Ch1[0], BufferAdc.Adc1Ch0[0]);
             InitMeasCompCurr( Q15(0), Q15(0)); 
-            uGF.Bit.RunMotor = 1;               //then start motor
             }
 
-        // Run the motor
-        uGF.Bit.ChangeMode = 1;
-        //DISABLE_GATES();
-        ENABLE_GATES();
-        PWM_Start();
+
+        //
         
 		//Run Motor loop
         while(1)
         {
-            readAllStatusRegisters();
+            //readAllStatusRegisters();
             if(mWARNINGS_AND_WATCHDOG_RESET_MAP.FAULT){
                 DISABLE_GATES(); // IMMIDIATELY STOP PWM ON MOSFETS!
                 uGF.Bit.StopFlag = 1;
                 LEDbits.RED_ON = true;
+            }
+        if(mIC_DUTY_CYCKLE_FILT >= 0.20 && mIC_DUTY_CYCKLE_FILT <= 0.80 ){
+            mFOC_DUTY_CYCKLE = (mIC_DUTY_CYCKLE_FILT-0.20) * 0.4375 + 0.15;
+            
+            mFOC_REF = Q15( mFOC_DUTY_CYCKLE ); // Linear scale to make sure duty is within 5% to 40%
+            if(uGF.Bit.RunMotor == 0 && START_POSTPONE_COUNTER++ > 10){
+                /* setup to openloop */
+                uGF.Bit.OpenLoop = 1;
+                // Run the motor
+                uGF.Bit.RunMotor = 1;
+                uGF.Bit.ChangeMode = 1;
+                EstimParm.RhoOffset = INITOFFSET_TRANS_OPEN_CLSD;
+                Startup_Ramp = 0;
+                Startup_Lock = 0;
+                
+            }
+                
+            STOP_POSTPONE_COUNTER = 0;
+        }
 
+        else if(mIC_DUTY_CYCKLE_FILT <= 0.19 || mIC_DUTY_CYCKLE_FILT >= 0.81 ){
+            START_POSTPONE_COUNTER=0;
+            if(STOP_POSTPONE_COUNTER++ > 10){
+                mFOC_DUTY_CYCKLE = 0;
+                mFOC_REF = Q15( mFOC_DUTY_CYCKLE ); // Linear scale to make sure duty is within 5% to 40%
+                uGF.Bit.StopFlag = 1;
+            }
+        }
+            
+            if(uGF.Bit.ChangeMode && uGF.Bit.RunMotor){
+                PWM_Start();
+                ENABLE_GATES();
             }
 	        /* as long as display loop time is not reached */
             /* skip */
             if(iDispLoopCnt >= DISPLOOPTIME)
             {
-				if (uGF.Bit.RunMotor == 0)
-                {
-				/* exit loop if motor not runned */
-					break;
-                }
 
                 // PWM servo input starts or stops the motor
-                if(uGF.Bit.StopFlag ){
+                if(uGF.Bit.StopFlag == 1 ){
                     /* set the reference speed value to 0 */
                     CtrlParm.qVelRef = 0;
                     /* restart in open loop */
@@ -234,9 +246,17 @@ int main(void) {
                     uGF.Bit.RunMotor = 0;
                     //reset periph
                     PWM_Stop();
+                    DISABLE_GATES();
                     ResetPeriph();
-                    break;
+                    __delay_ms(50);
                 }
+                
+                if (uGF.Bit.RunMotor == 0)
+                {
+				/* exit loop if motor not runned */
+					break;
+                }
+
             }			              
         }   // End of Run Motor loop
         
@@ -319,7 +339,7 @@ static void DoControl( void )
         if(uGF.Bit.ChangeSpeed)
 	    {
             ReadADCParm.qAnRef = mFOC_REF;
-            if(ReadADCParm.qAnRef / 2 > MAXIMUMSPEED_ELECTR)
+            if(ReadADCParm.qAnRef * 2 > MAXIMUMSPEED_ELECTR)
                 ReadADCParm.qAnRef = MAXIMUMSPEED_ELECTR;	    
 	    } 
         else {
@@ -396,7 +416,6 @@ static void DoControl( void )
         PIParmQ.qInRef  = CtrlParm.qVqRef;
         CalcPI(&PIParmQ);
         ParkParm.qVq    = PIParmQ.qOut;
-         
     }
 }
 
@@ -410,12 +429,11 @@ static void DoControl( void )
 /* The speed calculation assumes a fixed time interval between calculations.  */
 /******************************************************************************/
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
-uint16_t test_var = 0;
 void __attribute__ ( ( interrupt, no_auto_psv ) ) _DMA0Interrupt( void )
 {
     // Reset interrupt flag
     IFS0bits.DMA0IF = 0;
-#undef DEBUG_FOC_ALGORITHM_TIME   
+#define DEBUG_FOC_ALGORITHM_TIME   
 #ifdef DEBUG_FOC_ALGORITHM_TIME
     // pin toggle for debug
     GREEN_LED_ON();
@@ -451,24 +469,17 @@ void __attribute__ ( ( interrupt, no_auto_psv ) ) _DMA0Interrupt( void )
 
         // Calculate control values
         DoControl();
+        
         // Calculate qAngle from QEI Module
 		CalculateParkAngle();
 
         /* if open loop */
 		if(uGF.Bit.OpenLoop == 1)
 		{
-            
-            pIbBuf[iDispLoopCnt% SNAPSHOT_BUF_SIZE ] = EstimParm.qVelEstim;
-            pIaBuf[iDispLoopCnt% SNAPSHOT_BUF_SIZE ] = EstimParm.qRho;
 		    /* the angle is given by parkparm */
 		    SincosParm.qAngle = ParkParm.qAngle;
 		} else  
 		{
-            test_var++;
-            //if(test_var < SNAPSHOT_BUF_SIZE/2){
-            pIaBuf[iDispLoopCnt% SNAPSHOT_BUF_SIZE ] = EstimParm.qEsdStateVar;
-            pIbBuf[iDispLoopCnt% SNAPSHOT_BUF_SIZE ] = EstimParm.qVelEstimStateVar;
-            //}
 			/* if closed loop, angle generated by estim */
 			SincosParm.qAngle = EstimParm.qRho;
         }
@@ -488,8 +499,9 @@ void __attribute__ ( ( interrupt, no_auto_psv ) ) _DMA0Interrupt( void )
 
         // Calculate and set PWM duty cycles from Vr1,Vr2,Vr3
         CalcSVGen();
-
-    } 
+        //snap_qVelEstimStateVar[iDispLoopCnt% SNAPSHOT_BUF_SIZE ] = EstimParm.qVelEstimStateVar;
+        //snap_qVelEstim[iDispLoopCnt% SNAPSHOT_BUF_SIZE ] = EstimParm.qVelEstim;
+    }
 #ifdef DEBUG_FOC_ALGORITHM_TIME
     // pin toggle for debug
     GREEN_LED_OFF();
@@ -537,8 +549,10 @@ static void CalculateParkAngle(void)
 		else /* switch to closed loop */
 		{
 #ifndef OPEN_LOOP_FUNCTIONING
+            if(uGF.Bit.ForceOpenLoop == 0){
             uGF.Bit.ChangeMode = 1;
             uGF.Bit.OpenLoop = 0;
+            }
 #endif
 		}
 		/* the angle set depends on startup ramp */
@@ -606,4 +620,33 @@ static void InitControlParameters(void)
 	return;
 }
 
+void __attribute__((interrupt,no_auto_psv)) _HardTrapError(void); 
+void __attribute__((interrupt,no_auto_psv)) _SoftTrapError(void); 
+void __attribute__((interrupt,no_auto_psv)) _ReservedTrap7(void); 
+
+/* Primary Exception Vector handlers: 
+These routines are used if INTCON2bits.ALTIVT = 0. 
+All trap service routines in this file simply ensure that device 
+continuously executes code within the trap service routine. Users 
+may modify the basic framework provided here to suit to the needs 
+of their application. */ 
+//================================================================ 
+// SGHT: Software Generated Hard Trap Status bit 
+void __attribute__((interrupt,no_auto_psv)) _HardTrapError(void) 
+{ 
+    INTCON4bits.SGHT = 0; //Clear the trap flag 
+while (1); 
+} 
+//================================================================ 
+// SWTRAP: Software Trap Status bit 
+void __attribute__((interrupt,no_auto_psv)) _SoftTrapError(void) 
+{	
+    INTCON2bits.SWTRAP = 0; //Clear the trap flag 
+while (1); 
+} 
+//================================================================ 
+void __attribute__((interrupt,no_auto_psv)) _ReservedTrap7(void) 
+{	// INTCON1bits.DMACERR = 0; //Clear the trap flag 
+while (1); 
+} 
 

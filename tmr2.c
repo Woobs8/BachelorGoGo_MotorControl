@@ -93,12 +93,11 @@ void TMR2_Initialize (void)
     
     //TCKPS 1:8; TON enabled; TSIDL disabled; TCS FOSC/2; TGATE disabled; 
     T2CON = 0x8010;
-    T2CONbits.TCKPS = 1; // Prescaler must be 8
+    T2CONbits.TCKPS = 2; // Prescaler must be 64
     
     //Period =  
     
-    PR2 = 200 / (FCY / 0xFFFF) ;
-    
+    PR2 = 1;
 	
     tmr2_obj.timerElapsed = false;
 

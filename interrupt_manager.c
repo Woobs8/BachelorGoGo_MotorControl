@@ -56,5 +56,6 @@ void INTERRUPT_Initialize (void)
     //    ICI_INT: Input Compare 1
     //    Priority: 1
         IPC0bits.IC1IP = 1;
+        IPC1bits.DMA0IP = 2;
 }
 

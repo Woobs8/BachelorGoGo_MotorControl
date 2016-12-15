@@ -140,7 +140,7 @@ void setUp_DRV8305(void){
     //// SETUP OF HS_GATE_DRIVE_CONTROL
         HS_GATE_DRIVE_CONTROL_MAP Setup_HS_GATE_DRIVE_CONTROL_MAP;
         Setup_HS_GATE_DRIVE_CONTROL_MAP.TDRIVEN             = 0b10;   // High-side gate driver peak source time 880ns
-        Setup_HS_GATE_DRIVE_CONTROL_MAP.IDRIVEN_HS          = 0b1010; // High-side gate driver peak sink current 1A
+        Setup_HS_GATE_DRIVE_CONTROL_MAP.IDRIVEN_HS          = 0b1011; // High-side gate driver peak sink current 1A
         Setup_HS_GATE_DRIVE_CONTROL_MAP.IDRIVEP_HS          = 0b1011; // High-side gate driver peak source current 1A
 
         uint16_t cmd_HS_GATE_DRIVE_CONTROL_MAP = getDataString_DRV8305_HS_GATE_DRIVE_CONTROL(true,Setup_HS_GATE_DRIVE_CONTROL_MAP);
@@ -153,7 +153,7 @@ void setUp_DRV8305(void){
     //// SETUP OF LS_GATE_DRIVE_CONTROL
         LS_GATE_DRIVE_CONTROL_MAP Setup_LS_GATE_DRIVE_CONTROL_MAP;
         Setup_LS_GATE_DRIVE_CONTROL_MAP.TDRIVEN             = 0b10;   // Low-side gate driver peak source time 880ns
-        Setup_LS_GATE_DRIVE_CONTROL_MAP.IDRIVEN_LS          = 0b1010; // Low-side gate driver peak sink current 1A
+        Setup_LS_GATE_DRIVE_CONTROL_MAP.IDRIVEN_LS          = 0b1011; // Low-side gate driver peak sink current 1A
         Setup_LS_GATE_DRIVE_CONTROL_MAP.IDRIVEP_LS          = 0b1011; // Low-side gate driver peak source current 1A
 
         uint16_t cmd_LS_GATE_DRIVE_CONTROL_MAP = getDataString_DRV8305_LS_GATE_DRIVE_CONTROL(true,Setup_LS_GATE_DRIVE_CONTROL_MAP);

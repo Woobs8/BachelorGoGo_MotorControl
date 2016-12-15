@@ -54,9 +54,16 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <libpic30.h>
+#include "periph.h"
 
-extern float mIC_DUTY_CYCKLE;
+#define IC1_FREQ ((long)(FCY/(64)))
+#define IC1_COUNT_UPPER_LIMIT IC1_FREQ/90
+#define IC1_COUNT_LOWER_LIMIT IC1_FREQ/110
+
+extern double mIC_DUTY_CYCKLE;
 extern short mFOC_REF;
+extern double mFOC_DUTY_CYCKLE;
+extern double mIC_DUTY_CYCKLE_FILT;
 
 #ifdef __cplusplus  // Provide C++ Compatibility
 
