@@ -29,7 +29,7 @@ typedef struct {
 	int				  qEsqf;        // BEMF q filtered
 	long			  qEsqStateVar; // state var for BEMF q Filtered
 	int				  qKfilterEsdq; // filter constant for d-q BEMF
-	int   			  qVelEstim; 			// Estimated speed 
+	unsigned int   	  qVelEstim; 			// Estimated speed 
 	int   			  qVelEstimFilterK; 	// Filter Konstant for Estimated speed 
 	long   			  qVelEstimStateVar; 	// State Variable for Estimated speed 
     int   			  qLastValpha;  // Value from last control step Ialpha 
@@ -55,7 +55,7 @@ typedef struct {
 
 extern tEstimParm 	EstimParm;
 extern tMotorEstimParm 	MotorEstimParm;
-
+extern int temporary;
 //------------------  C API for Control routine ---------------------
 
 void	Estim(void);

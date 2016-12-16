@@ -36,15 +36,17 @@ tMotorEstimParm 	MotorEstimParm;
 /* inverter voltages and motor currents.                                      */
 /******************************************************************************/
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
+
+int temporary;  
 void Estim(void)
 {
     long temp_int;
-
+    long long temp_long;
     // *******************************
     // dIalpha = Ialpha-oldIalpha,  dIbeta  = Ibeta-oldIbeta
     // for lower speed the granularity of differnce is higher - the 
     // difference is made between 2 sampled values @ 8 ADC ISR cycles
-    if (_Q15abs(EstimParm.qVelEstim)<NOMINAL_SPEED_RPM*NOPOLESPAIRS)
+    if (_Q15abs(EstimParm.qVelEstim) * 2 < (unsigned int)(NOMINAL_SPEED_RPM/3*NOPOLESPAIRS) << RPM_SCALE)
     {
     
     	EstimParm.qDIalpha	=	(ParkParm.qIalpha-EstimParm.qLastIalphaHS[(EstimParm.qDiCounter-7)&0x0007]);
@@ -52,33 +54,30 @@ void Estim(void)
     	// * the following limitation assures a limitation per low speed - up to the nominal speed 
     	if (EstimParm.qDIalpha>EstimParm.qDIlimitLS) EstimParm.qDIalpha=EstimParm.qDIlimitLS;
     	if (EstimParm.qDIalpha<-EstimParm.qDIlimitLS) EstimParm.qDIalpha=-EstimParm.qDIlimitLS;
-    	EstimParm.qVIndalpha = (int)(__builtin_mulss(MotorEstimParm.qLsDt, EstimParm.qDIalpha)>>10);
+    	EstimParm.qVIndalpha = (int)(__builtin_mulss(MotorEstimParm.qLsDt, EstimParm.qDIalpha)>>(15-LS_SCALE+3));
      
     	EstimParm.qDIbeta	=	(ParkParm.qIbeta-EstimParm.qLastIbetaHS[(EstimParm.qDiCounter-7)&0x0007]);
     	// * the current difference can exceed the maximum value per 8 ADC ISR cycle 
     	// * the following limitation assures a limitation per low speed - up to the nominal speed 
     	if (EstimParm.qDIbeta>EstimParm.qDIlimitLS) EstimParm.qDIbeta=EstimParm.qDIlimitLS;
     	if (EstimParm.qDIbeta<-EstimParm.qDIlimitLS) EstimParm.qDIbeta=-EstimParm.qDIlimitLS;
-    	EstimParm.qVIndbeta = (int)(__builtin_mulss(MotorEstimParm.qLsDt, EstimParm.qDIbeta)>>10);
-    
+    	EstimParm.qVIndbeta = (int)(__builtin_mulss(MotorEstimParm.qLsDt, EstimParm.qDIbeta)>>(15-LS_SCALE+3));
     }
      else
     {
-    
     	EstimParm.qDIalpha	=	(ParkParm.qIalpha-EstimParm.qLastIalphaHS[(EstimParm.qDiCounter)]);
     	// * the current difference can exceed the maximum value per 1 ADC ISR cycle 
     	// * the following limitation assures a limitation per high speed - up to the maximum speed 
     	if (EstimParm.qDIalpha>EstimParm.qDIlimitHS) EstimParm.qDIalpha=EstimParm.qDIlimitHS;
     	if (EstimParm.qDIalpha<-EstimParm.qDIlimitHS) EstimParm.qDIalpha=-EstimParm.qDIlimitHS;
-    	EstimParm.qVIndalpha = (int)(__builtin_mulss(MotorEstimParm.qLsDt, EstimParm.qDIalpha)>>7);
+    	EstimParm.qVIndalpha = (int)(__builtin_mulss(MotorEstimParm.qLsDt, EstimParm.qDIalpha)>>(15-LS_SCALE));
     
     	EstimParm.qDIbeta	=	(ParkParm.qIbeta-EstimParm.qLastIbetaHS[(EstimParm.qDiCounter)]);
     	// * the current difference can exceed the maximum value per 1 ADC ISR cycle 
     	// * the following limitation assures a limitation per high speed - up to the maximum speed 
     	if (EstimParm.qDIbeta>EstimParm.qDIlimitHS) EstimParm.qDIbeta=EstimParm.qDIlimitHS;
     	if (EstimParm.qDIbeta<-EstimParm.qDIlimitHS) EstimParm.qDIbeta=-EstimParm.qDIlimitHS;
-    	EstimParm.qVIndbeta= (int)(__builtin_mulss(MotorEstimParm.qLsDt, EstimParm.qDIbeta)>>7);
-    
+    	EstimParm.qVIndbeta= (int)(__builtin_mulss(MotorEstimParm.qLsDt, EstimParm.qDIbeta)>>(15-LS_SCALE));
     }
     
     // *******************************
@@ -90,10 +89,9 @@ void Estim(void)
     // *******************************
     // Stator voltage eqations
     // Ualpha = Rs * Ialpha + Ls dIalpha/dt + BEMF
-    // BEMF = Ualpha - Rs Ialpha - Ls dIalpha/dt   
-    
+    // BEMF = Ualpha - Rs Ialpha - Ls dIalpha/dt    
 	EstimParm.qEsa		= 	EstimParm.qLastValpha -
-							(int)(__builtin_mulss( MotorEstimParm.qRs, ParkParm.qIalpha)	>>14)
+							(int)(__builtin_mulss( MotorEstimParm.qRs, ParkParm.qIalpha)	>>(15-RS_SCALE))
 							- EstimParm.qVIndalpha;
     // * the multiplication between the Rs and Ialpha was shifted by 14 instead of 15 
     // * because the Rs value normalized exceeded Q15 range, so it was divided by 2 
@@ -102,7 +100,7 @@ void Estim(void)
     // Ubeta = Rs * Ibeta + Ls dIbeta/dt + BEMF
     // BEMF = Ubeta - Rs Ibeta - Ls dIbeta/dt   
 	EstimParm.qEsb		= 	EstimParm.qLastVbeta -
-							(int)(__builtin_mulss( MotorEstimParm.qRs, ParkParm.qIbeta )	>>14)
+							(int)(__builtin_mulss( MotorEstimParm.qRs, ParkParm.qIbeta )	>>(15-RS_SCALE)) 
 							- EstimParm.qVIndbeta;
 							
     // the multiplication between the Rs and Ibeta was shifted by 14 instead of 15 
@@ -146,7 +144,7 @@ void Estim(void)
 
     // OmegaMr= InvKfi * (Esqf -sgn(Esqf) * Esdf)
     // For stability the conditio for low speed
-    if (_Q15abs(EstimParm.qVelEstim)>DECIMATE_NOMINAL_SPEED)
+    if (_Q15abs(EstimParm.qVelEstim) *2 > DECIMATE_NOMINAL_SPEED)
     {
     	if(EstimParm.qEsqf>0)
     	{
@@ -169,23 +167,22 @@ void Estim(void)
     		EstimParm.qOmegaMr	=	 (int)(__builtin_mulss(MotorEstimParm.qInvKFi,temp_int)>>15);
     	}
     }
-    // the result of the calculation above is shifted left by one because initally the value of InvKfi 
-    // was shifted by 2 after normalizing - assuring that extended range of the variable is possible in the lookup table 
+    // the result of the calculation above is shifted left by NORM_INVKFIBASE_SCALE because initally the value of InvKfi 
+    // was shifted by NORM_INVKFIBASE_SCALE after normalizing - assuring that extended range of the variable is possible in the lookup table 
     // the initial value of InvKfi is defined in userparms.h 
-    EstimParm.qOmegaMr=EstimParm.qOmegaMr<<1;
+    temp_int=EstimParm.qOmegaMr<<NORM_INVKFIBASE_SCALE; 
     
     	
-    // the integral of the angle is the estimated angle 
-	EstimParm.qRhoStateVar	+= __builtin_mulss(EstimParm.qOmegaMr, EstimParm.qDeltaT);
+    // the integral of the speed is the estimated angle 
+	EstimParm.qRhoStateVar	+= __builtin_mulss(temp_int, EstimParm.qDeltaT);
 	EstimParm.qRho 		= 	(int) (EstimParm.qRhoStateVar>>15);
 
 
     // the estiamted speed is a filter value of the above calculated OmegaMr. The filter implementation 
     // is the same as for BEMF d-q components filtering 
-    temp_int = (int)(EstimParm.qOmegaMr-EstimParm.qVelEstim);
-	EstimParm.qVelEstimStateVar+=__builtin_mulss(temp_int, EstimParm.qVelEstimFilterK);
-	EstimParm.qVelEstim=	(int)(EstimParm.qVelEstimStateVar>>15);
-
+    temp_int = (long)(temp_int-EstimParm.qVelEstim *  2);
+	EstimParm.qVelEstimStateVar+= (__builtin_mulss(temp_int, EstimParm.qVelEstimFilterK));;
+    EstimParm.qVelEstim=	((unsigned int)((EstimParm.qVelEstimStateVar>>15 ))/2);
 }	// End of Estim()
 
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
@@ -221,5 +218,4 @@ void	InitEstimParm(void)
 
     EstimParm.qDeltaT = NORM_DELTAT;
     EstimParm.RhoOffset = INITOFFSET_TRANS_OPEN_CLSD;
-
 }

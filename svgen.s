@@ -361,6 +361,7 @@ CalcTimes:
 
 		sl.w      _SVGenParm+SVGen_iPWMPeriod,WREG
 
+     ;; T1 = PWM*T1		
           mul.us    w0,T1W,WorkDLoW
           mov.w     WorkDHiW,T1W
 

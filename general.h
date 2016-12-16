@@ -56,4 +56,20 @@ typedef unsigned char  BYTE;
         ((Float_Value < 0.0) ? (SFRAC16)(32768 * (Float_Value) - 0.5) \
         : (SFRAC16)(32767 * (Float_Value) + 0.5))
 
+typedef union   {
+        struct
+            {
+            unsigned RunMotor:1;  /* run motor indication */
+            unsigned OpenLoop:1;  /* open loop/clsd loop indication */
+            unsigned ChangeMode:1; /* mode changed indication - from open to clsd loop */
+            unsigned ChangeSpeed:1; /* speed doubled indication */
+            unsigned StopFlag:1;
+            unsigned ForceOpenLoop:1;
+            unsigned    :10;
+            }Bit;
+        WORD Word;
+        } GENERAL_FLAGS;        // general flags
+        
+extern GENERAL_FLAGS uGF;
+        
 #endif      // end of general_H

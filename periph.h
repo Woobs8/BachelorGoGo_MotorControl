@@ -37,8 +37,8 @@
 #include "general.h"   /* includes types definitions used */
 #include "userparams.h"
 
-#define FCY_HZ                      35000000            // Instruction cycle frequency (Hz)
-#define FCY                         35000000UL
+#define FCY_HZ                      50000000            // Instruction cycle frequency (Hz)
+#define FCY                         50000000UL
 #define FOSC                        2*FCY
 #define TCY_SEC                     (1.0/FCY_HZ)          // Instruction cycle period (sec)
 

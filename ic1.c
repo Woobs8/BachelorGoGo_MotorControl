@@ -49,6 +49,7 @@
 #include <xc.h>
 #include <p33EP128MC504.h>
 #include "ic1.h"
+#include "general.h"
 
 /**
   IC Mode.
@@ -66,11 +67,13 @@
 #define IC1_TriggerStatusClear( void ) (IC1CON2bits.TRIGSTAT = 0)
 #define IC1_Calc_Duty( void ) ((unsigned int)( falling_edge_timestamp / rising_edge_timestamp * 100))
 #define IC_MEAS_BUF_LEN     2
-
+#define INITIAL_DUTY         0.0
 
 static uint16_t         gIC1Mode;
-float mIC_DUTY_CYCKLE = 0;
-float mTORQUE_REF = 0;
+double mIC_DUTY_CYCKLE = INITIAL_DUTY;
+double mIC_DUTY_CYCKLE_FILT = INITIAL_DUTY;
+short mFOC_REF = Q15(INITIAL_DUTY);
+double mFOC_DUTY_CYCKLE = 0;
 unsigned int mIC_OFFSET = 0;
 uint16_t mIC_MEAS_BUF[IC_MEAS_BUF_LEN];
 uint16_t mIC_BUF_COUNTER = 0;
@@ -103,7 +106,6 @@ void __attribute__ ( ( interrupt, no_auto_psv ) ) _ISR _IC1Interrupt( void )
     
     // CHECK IF PWM IS HIGH
     if(PORTBbits.RB7) {
-        LATAbits.LATA8  ^= 1;
     // GET IC BUFFER VALUES
     while(IC1CON1bits.ICBNE){
         if(mIC_BUF_COUNTER < IC_MEAS_BUF_LEN){
@@ -111,14 +113,21 @@ void __attribute__ ( ( interrupt, no_auto_psv ) ) _ISR _IC1Interrupt( void )
         }
         else{
              temp = IC1BUF; // Make sure we read the buffer untill empty
-        }
+        } 
             
         mIC_BUF_COUNTER++;
     }
         
-    if(mIC_BUF_COUNTER==IC_MEAS_BUF_LEN && mIC_MEAS_BUF[0] < mIC_MEAS_BUF[1]){
-        mIC_DUTY_CYCKLE = ((mIC_MEAS_BUF[0] + mIC_OFFSET ) / (float)(mIC_MEAS_BUF[1]+ mIC_OFFSET));
+    if(mIC_BUF_COUNTER==IC_MEAS_BUF_LEN && mIC_MEAS_BUF[0]+mIC_OFFSET < mIC_MEAS_BUF[1]+mIC_OFFSET){
+        if(mIC_MEAS_BUF[1]+mIC_OFFSET > IC1_COUNT_LOWER_LIMIT && mIC_MEAS_BUF[1]+mIC_OFFSET < IC1_COUNT_UPPER_LIMIT ){// FREQUENCE OF IC INPUT MUST BE BETWEEN 150 AND 50 HZ
+            
+        mIC_DUTY_CYCKLE = ((mIC_MEAS_BUF[0] + mIC_OFFSET ) / (double)(mIC_MEAS_BUF[1]+ mIC_OFFSET));
+        mIC_DUTY_CYCKLE_FILT = mIC_DUTY_CYCKLE_FILT + 0.5*(mIC_DUTY_CYCKLE-mIC_DUTY_CYCKLE_FILT);
+        
         mIC_OFFSET = IC1TMR - mIC_MEAS_BUF[1];
+        
+
+        }
     }
     else{
         mIC_OFFSET = 0;
@@ -129,11 +138,10 @@ void __attribute__ ( ( interrupt, no_auto_psv ) ) _ISR _IC1Interrupt( void )
     IC1_ManualTriggerSet();
     }
     else {
-        LATAbits.LATA8 ^= 1;
-    }
     mIC_BUF_COUNTER = 0;
-    
+    }
 }
+
 void IC1_Start( void )
 {
     IC1CON1bits.ICM = gIC1Mode;

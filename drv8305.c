@@ -140,7 +140,7 @@ void setUp_DRV8305(void){
     //// SETUP OF HS_GATE_DRIVE_CONTROL
         HS_GATE_DRIVE_CONTROL_MAP Setup_HS_GATE_DRIVE_CONTROL_MAP;
         Setup_HS_GATE_DRIVE_CONTROL_MAP.TDRIVEN             = 0b10;   // High-side gate driver peak source time 880ns
-        Setup_HS_GATE_DRIVE_CONTROL_MAP.IDRIVEN_HS          = 0b1010; // High-side gate driver peak sink current 1A
+        Setup_HS_GATE_DRIVE_CONTROL_MAP.IDRIVEN_HS          = 0b1011; // High-side gate driver peak sink current 1A
         Setup_HS_GATE_DRIVE_CONTROL_MAP.IDRIVEP_HS          = 0b1011; // High-side gate driver peak source current 1A
 
         uint16_t cmd_HS_GATE_DRIVE_CONTROL_MAP = getDataString_DRV8305_HS_GATE_DRIVE_CONTROL(true,Setup_HS_GATE_DRIVE_CONTROL_MAP);
@@ -153,7 +153,7 @@ void setUp_DRV8305(void){
     //// SETUP OF LS_GATE_DRIVE_CONTROL
         LS_GATE_DRIVE_CONTROL_MAP Setup_LS_GATE_DRIVE_CONTROL_MAP;
         Setup_LS_GATE_DRIVE_CONTROL_MAP.TDRIVEN             = 0b10;   // Low-side gate driver peak source time 880ns
-        Setup_LS_GATE_DRIVE_CONTROL_MAP.IDRIVEN_LS          = 0b1010; // Low-side gate driver peak sink current 1A
+        Setup_LS_GATE_DRIVE_CONTROL_MAP.IDRIVEN_LS          = 0b1011; // Low-side gate driver peak sink current 1A
         Setup_LS_GATE_DRIVE_CONTROL_MAP.IDRIVEP_LS          = 0b1011; // Low-side gate driver peak source current 1A
 
         uint16_t cmd_LS_GATE_DRIVE_CONTROL_MAP = getDataString_DRV8305_LS_GATE_DRIVE_CONTROL(true,Setup_LS_GATE_DRIVE_CONTROL_MAP);
@@ -213,7 +213,7 @@ void setUp_DRV8305(void){
         Setup_SHUNT_AMPLIFIER_CONTROL_MAP.DC_CAL_CH2        = 0b0;        
         Setup_SHUNT_AMPLIFIER_CONTROL_MAP.DC_CAL_CH1        = 0b0;
         Setup_SHUNT_AMPLIFIER_CONTROL_MAP.CS_BLANK          = 0b00; // blanking time = 0ns;
-        Setup_SHUNT_AMPLIFIER_CONTROL_MAP.GAIN_CS1          = 0b10; // b'00 = 10 V/V,   b'01 = 20 V/V,  b'10 = 40 V/V,  b'11 - 80 V/V
+        Setup_SHUNT_AMPLIFIER_CONTROL_MAP.GAIN_CS1          = 0b01; // b'00 = 10 V/V,   b'01 = 20 V/V,  b'10 = 40 V/V,  b'11 - 80 V/V
                                                                     // Rsense = 0,002 ohm max 40 A <=> Vsense = 0,002*40 = 0,080V
                                                                     // Vref = 3,3V <=> Output = Vref/(Vrefscale=2) - Gain * (0-Vsense) 
                                                                     //             <=>  3,3V  = 3,3V/2             - Gain * ( -0,080V)
@@ -222,8 +222,8 @@ void setUp_DRV8305(void){
                                                                     // Wattage = 0,002 * 40^2 = 3,2W
                                                                     // Wattage max 3W <=> Max current = sqrt(3W/0,002ohm) = 38,8A  // OBS wattage is typically divided between phases
                                                                     // Should be able to use 40A when motor is rotating fast. Turn down to 38A when Rotating slow
-        Setup_SHUNT_AMPLIFIER_CONTROL_MAP.GAIN_CS2          = 0b10;
-        Setup_SHUNT_AMPLIFIER_CONTROL_MAP.GAIN_CS3          = 0b10;
+        Setup_SHUNT_AMPLIFIER_CONTROL_MAP.GAIN_CS2          = 0b01;
+        Setup_SHUNT_AMPLIFIER_CONTROL_MAP.GAIN_CS3          = 0b01;
 
         uint16_t cmd_SHUNT_AMPLIFIER_CONTROL_MAP = getDataString_DRV8305_SHUNT_AMPLIFIER_CONTROL(true,Setup_SHUNT_AMPLIFIER_CONTROL_MAP);
         sendCommand_DRV8305(cmd_SHUNT_AMPLIFIER_CONTROL_MAP);

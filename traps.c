@@ -48,6 +48,7 @@
 */
 #include <xc.h>
 #include "traps.h"
+#include "periph.h" 
 
 #define ERROR_HANDLER __attribute__((interrupt, no_auto_psv, keep, section("error_handler")))
 #define ERROR_HANDLER_NORETURN ERROR_HANDLER __attribute__((noreturn))
@@ -59,14 +60,15 @@
 static uint16_t TRAPS_error_code = -1;
 
 /**
- * Halts 
+ * Halts    
  * 
  * @param code error code
  */
 void __attribute__((naked, noreturn, weak)) TRAPS_halt_on_error(uint16_t code)
 {
+    RED_LED_ON();
     TRAPS_error_code = code;
-#ifdef __DEBUG    
+#ifdef __DEBUG
     __builtin_software_breakpoint();
     /* If we are in debug mode, cause a software breakpoint in the debugger */
 #endif
@@ -133,4 +135,3 @@ void ERROR_HANDLER_NORETURN _DMACError(void)
     INTCON1bits.DMACERR = 0;        //Clear the trap flag
     TRAPS_halt_on_error(TRAPS_DMAC_ERR);
 }
-

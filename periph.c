@@ -137,7 +137,7 @@ void InitPeriph(void)
 
 	/****************** Clock definitions *********************************/
 
-	PLLFBD = 38;                // M    =   52 
+	PLLFBD = 49;                // M    =   52 
 	CLKDIVbits.PLLPOST = 0;		// N1   =   2
 	CLKDIVbits.PLLPRE = 0;		// N2   =   2
     // Initiate Clock Switch to FRC with PLL (NOSC=0b001)
@@ -160,6 +160,10 @@ void InitPeriph(void)
     //RED_LED_ON();
     //BLUE_LED_ON();
 	
+    	// ============= SPI1 GAte Driver Communication ======================
+    SPI1_Initialize();
+    setUp_DRV8305();
+    
     // ============= ADC INIT ======================
     ADC_Initialize();
     /****************************************************************/         
@@ -172,10 +176,6 @@ void InitPeriph(void)
     PWM_Initialize(20000);
      /****************************************************************/
     
-	// ============= SPI1 GAte Driver Communication ======================
-    SPI1_Initialize();
-    setUp_DRV8305();
-    
     /****************************************************************/
     // ============= Motor Speed Reference Measurement ==============
     TMR2_Initialize(); //  Timer will be a clock to IC1
@@ -184,9 +184,8 @@ void InitPeriph(void)
     /****************************************************************/
     
     // ============= Global Interrupts ======================
+    INTERRUPT_Initialize();
     INTERRUPT_GlobalEnable();
-    
-    PWM_Start();
 }
 
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/

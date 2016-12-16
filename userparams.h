@@ -1,6 +1,6 @@
 #ifndef USERPARMS_H
 #define USERPARMS_H
-
+#include <math.h>
 /* Bidirectional functioning */
 /* Activating the macro below, a speed reverse will be possible */
 /* turning the potentiometer across the median point */
@@ -13,7 +13,7 @@
 /* the software ramp implementing the speed increase has a constant slope, */
 /* adjusted by the delay TUNING_DELAY_RAMPUP when the speed is incremented.*/
 /* The potentiometer speed reference is overwritten. The speed is          */
-/* increased from 0 up to the END_SPEED_RPM in open loop – with the speed  */
+/* increased from 0 up to the END_SPEED_RPM in open loop ? with the speed  */
 /* increase typical to open loop, the transition to closed loop is done    */
 /* and the software speed ramp reference is continued up to MAXIMUM_SPEED_RPM. */
 #undef TUNING
@@ -26,18 +26,18 @@
 
 /* open loop continuous functioning */
 /* closed loop transition disabled  */
-#define OPEN_LOOP_FUNCTIONING 2
+//#define OPEN_LOOP_FUNCTIONING
 
 
 /* definition for torque mode - for a separate tuning of the current PI
  controllers, tuning mode will disable the speed PI controller */
-#define TORQUE_MODE 1
+//#define TORQUE_MODE 1
 
 
 
 
 #define LOOPTIME_SEC  0.00005           // PWM Period - 50 uSec, 20Khz PWM
-#define	SPEED_POLL_LOOPTIME_SEC	10   // button polling loop period in sec
+#define	SPEED_POLL_LOOPTIME_SEC	1       // button polling loop period in sec
 #define DEADTIME_SEC  0.0000004          // Dead time in seconds - 2us
 
 #undef PWM_DT_ERRATA
@@ -65,25 +65,34 @@
 
 //**************  Motor Parameters **************
 /* motor's number of pole pairs */
-#define NOPOLESPAIRS 2
+#define NOPOLESPAIRS 3
 /* Nominal speed of the motor in RPM */
-#define NOMINAL_SPEED_RPM    9000 // Value in RPM
+#define RPM_SCALE           1
+#define NOMINAL_SPEED_RPM_NON_SCALED 5000
+#define NOMINAL_SPEED_RPM    NOMINAL_SPEED_RPM_NON_SCALED/(powf(2,RPM_SCALE)) 
 /* Maximum speed of the motor in RPM - given by the motor's manufacturer */
-#define MAXIMUM_SPEED_RPM    10000 // Value in RPM  
+#define MAXIMUM_SPEED_RPM_NON_SCALED 21000
+#define MAXIMUM_SPEED_RPM   MAXIMUM_SPEED_RPM_NON_SCALED/(powf(2,RPM_SCALE))
 
 
 
-#define NORM_CURRENT_CONST     0.00121
+#define NORM_CURRENT_CONST     0.002442
 /* normalized ls/dt value */
-#define NORM_LSDTBASE 1460
+#define LS_SCALE      3
+#define NORM_LSDTBASE_NON_SCALED        24411
+#define NORM_LSDTBASE                   (NORM_LSDTBASE_NON_SCALED/(powf(2,LS_SCALE)))
 /* normalized rs value */
-#define NORM_RS  12990
+#define RS_SCALE 0
+#define NORM_RS_NON_SCALED 10680
+#define NORM_RS  NORM_RS_NON_SCALED/(powf(2,RS_SCALE))
 /* the calculation of Rs gives a value exceeding the Q15 range so,
 the normalized value is further divided by 2 to fit the 32768 limit */
-/* this is taken care in the estim.c where the value is implied */
+/* this is taken care in the estim.c where the value is implied */  
 
 /* normalized inv kfi at base speed */
-#define NORM_INVKFIBASE  7956
+#define NORM_INVKFIBASE_SCALE 4
+#define NORM_INVKFIBASE_NON_SCALED 81164
+#define NORM_INVKFIBASE  (NORM_INVKFIBASE_NON_SCALED/(powf(2,NORM_INVKFIBASE_SCALE)))
 /* the calculation of InvKfi gives a value which not exceed the Q15 limit */
 /* to assure that an increase of the term with 5 is possible in the lookup table */
 /* for high flux weakening the normalized is initially divided by 2 */
@@ -95,11 +104,10 @@ the normalized value is further divided by 2 to fit the 32768 limit */
 // Limitation constants 
 /* di = i(t1)-i(t2) limitation */ 
 /* high speed limitation, for dt 50us */
-
 /* the value can be taken from attached xls file */
-#define D_ILIMIT_HS 1502
+#define D_ILIMIT_HS 3277
 /* low speed limitation, for dt 8*50us */
-#define D_ILIMIT_LS 6117
+#define D_ILIMIT_LS 26214
 
 // Filters constants definitions  
 /* BEMF filter for d-q components @ low speeds */
@@ -118,7 +126,7 @@ the normalized value is further divided by 2 to fit the 32768 limit */
 /* normally this value should not be modified, but in */
 /* case of fine tuning of the transition, depending on */
 /* the load or the rotor moment of inertia */
-#define INITOFFSET_TRANS_OPEN_CLSD 0x2000
+#define INITOFFSET_TRANS_OPEN_CLSD 0x2000 //10000
 
 /* current transformation macro, used below */
 #define NORM_CURRENT(current_real) (Q15(current_real/NORM_CURRENT_CONST/32768))
@@ -128,13 +136,15 @@ the normalized value is further divided by 2 to fit the 32768 limit */
 /* lock time is the time needed for motor's poles alignment 
  before the open loop speed ramp up */
 
-#define LOCK_TIME 10000 // This number is: 20,000 is 1 second.
+#define LOCK_TIME 5000 // This number is: 20,000 is 1 second.
 /* open loop speed ramp up end value */
-#define END_SPEED_RPM 875 // Value in RPM
+#define END_SPEED_RPM 1500 // Value in RPM
 /* open loop acceleration */
-#define OPENLOOP_RAMPSPEED_INCREASERATE 15
+#define OPENLOOP_RAMPSPEED_INCREASERATE 3
 /* open loop q current setup - */
-#define Q_CURRENT_REF_OPENLOOP NORM_CURRENT(3)
+#define START_UP_WAIT_SHIFT 7
+#define Q_CURRENT_REF_LOCK NORM_CURRENT(10)
+#define Q_CURRENT_REF_OPENLOOP NORM_CURRENT(8)
 
 /* in case of the potentimeter speed reference, a reference ramp
  is needed for assuring the motor can follow the reference imposed */
@@ -142,22 +152,22 @@ the normalized value is further divided by 2 to fit the 32768 limit */
 
 /* PI controllers tuning values - */
 //******** D Control Loop Coefficients *******
-#define     D_CURRCNTR_PTERM           Q15(0.02)
-#define     D_CURRCNTR_ITERM           Q15(0.002)
+#define     D_CURRCNTR_PTERM           Q15(0.008)
+#define     D_CURRCNTR_ITERM           Q15(0.003)
 #define     D_CURRCNTR_CTERM           Q15(0.999)
 #define     D_CURRCNTR_OUTMAX          0x7FFF
 
 //******** Q Control Loop Coefficients *******
-#define     Q_CURRCNTR_PTERM           Q15(0.02)
-#define     Q_CURRCNTR_ITERM           Q15(0.002)
+#define     Q_CURRCNTR_PTERM           Q15(0.008)
+#define     Q_CURRCNTR_ITERM           Q15(0.003)
 #define     Q_CURRCNTR_CTERM           Q15(0.999)
 #define     Q_CURRCNTR_OUTMAX          0x7FFF
 
 //*** Velocity Control Loop Coefficients *****
 #define     SPEEDCNTR_PTERM        Q15(0.5)
-#define     SPEEDCNTR_ITERM        Q15(0.005)
+#define     SPEEDCNTR_ITERM        Q15(0.03)
 #define     SPEEDCNTR_CTERM        Q15(0.999)
-#define     SPEEDCNTR_OUTMAX       0x5000
+#define     SPEEDCNTR_OUTMAX       0x6000
 
 
 //************** Field Weakening **************
@@ -171,7 +181,7 @@ the normalized value is further divided by 2 to fit the 32768 limit */
 /* In flux weakening of the surface mounted permanent magnets  */
 /* PMSMs the mechanical damage of the rotor and the            */
 /* demagnetization of the permanent magnets is possible if     */
-/* cautions measures are not taken or the motor’s producer     */
+/* cautions measures are not taken or the motor?s producer     */
 /* specifications are not respected.                           */
 /*-------------------------------------------------------------*/
 /* IMPORTANT:--------------------------------------------------*/
@@ -181,7 +191,7 @@ the normalized value is further divided by 2 to fit the 32768 limit */
 /* damaging the inverter is eminent. The reason is that the    */
 /* BEMF will have a greater value than the one that would be   */
 /* obtained for the nominal speed exceeding the DC bus voltage */
-/* value and though the inverter’s power semiconductors and DC */
+/* value and though the inverter?s power semiconductors and DC */
 /* link capacitors would have to support it. Since the tuning  */
 /* proposed implies iterative coefficient corrections until    */
 /* the optimum functioning is achieved, the protection of the  */
@@ -195,67 +205,67 @@ the normalized value is further divided by 2 to fit the 32768 limit */
 /* the following values indicate the d-current variation with speed */
 /* please consult app note for details on tuning */
 #define	IDREF_SPEED0	NORM_CURRENT(0)       // up to 2800 RPM
-#define	IDREF_SPEED1	NORM_CURRENT(-0.7)   // ~2950 RPM
-#define	IDREF_SPEED2	NORM_CURRENT(-0.9)   // ~3110 RPM
-#define	IDREF_SPEED3	NORM_CURRENT(-1.0)  // ~3270 RPM
-#define	IDREF_SPEED4	NORM_CURRENT(-1.4)  // ~3430 RPM
-#define	IDREF_SPEED5	NORM_CURRENT(-1.7)  // ~3600 RPM
-#define	IDREF_SPEED6	NORM_CURRENT(-2.0)    // ~3750 RPM
-#define	IDREF_SPEED7	NORM_CURRENT(-2.1)    // ~3910 RPM
-#define	IDREF_SPEED8	NORM_CURRENT(-2.2)  // ~4070 RPM
-#define	IDREF_SPEED9	NORM_CURRENT(-2.25)  // ~4230 RPM
-#define	IDREF_SPEED10	NORM_CURRENT(-2.3)   // ~4380 RPM
-#define	IDREF_SPEED11	NORM_CURRENT(-2.35)    // ~4550 RPM
-#define	IDREF_SPEED12	NORM_CURRENT(-2.4)   // ~4700 RPM
-#define	IDREF_SPEED13	NORM_CURRENT(-2.45)    // ~4860 RPM
-#define	IDREF_SPEED14	NORM_CURRENT(-2.5)   // ~5020 RPM
-#define	IDREF_SPEED15	NORM_CURRENT(-2.5)    // ~5180 RPM
-#define	IDREF_SPEED16	NORM_CURRENT(-2.5)  // ~5340 RPM
-#define	IDREF_SPEED17	NORM_CURRENT(-2.5)  // ~5500 RPM
+#define	IDREF_SPEED1	IDREF_SPEED0//NORM_CURRENT(-0.7)   // ~2950 RPM
+#define	IDREF_SPEED2	IDREF_SPEED0//NORM_CURRENT(-0.9)   // ~3110 RPM
+#define	IDREF_SPEED3	IDREF_SPEED0//NORM_CURRENT(-1.0)  // ~3270 RPM
+#define	IDREF_SPEED4	IDREF_SPEED0//NORM_CURRENT(-1.4)  // ~3430 RPM
+#define	IDREF_SPEED5	IDREF_SPEED0//NORM_CURRENT(-1.7)  // ~3600 RPM
+#define	IDREF_SPEED6	IDREF_SPEED0//NORM_CURRENT(-2.0)    // ~3750 RPM
+#define	IDREF_SPEED7	IDREF_SPEED0//NORM_CURRENT(-2.1)    // ~3910 RPM
+#define	IDREF_SPEED8	IDREF_SPEED0//NORM_CURRENT(-2.2)  // ~4070 RPM
+#define	IDREF_SPEED9	IDREF_SPEED0//NORM_CURRENT(-2.25)  // ~4230 RPM
+#define	IDREF_SPEED10	IDREF_SPEED0//NORM_CURRENT(-2.3)   // ~4380 RPM
+#define	IDREF_SPEED11	IDREF_SPEED0//NORM_CURRENT(-2.35)    // ~4550 RPM
+#define	IDREF_SPEED12	IDREF_SPEED0//NORM_CURRENT(-2.4)   // ~4700 RPM
+#define	IDREF_SPEED13	IDREF_SPEED0//NORM_CURRENT(-2.45)    // ~4860 RPM
+#define	IDREF_SPEED14	IDREF_SPEED0//NORM_CURRENT(-2.5)   // ~5020 RPM
+#define	IDREF_SPEED15	IDREF_SPEED0//NORM_CURRENT(-2.5)    // ~5180 RPM
+#define	IDREF_SPEED16	IDREF_SPEED0//NORM_CURRENT(-2.5)  // ~5340 RPM
+#define	IDREF_SPEED17	IDREF_SPEED0//NORM_CURRENT(-2.5)  // ~5500 RPM
 
 
 /* the following values indicate the invKfi variation with speed */
 /* please consult app note for details on tuning */
-#define	INVKFI_SPEED0	NORM_INVKFIBASE     // up to 2800 RPM
-#define	INVKFI_SPEED1	8674     // ~2950 RPM
-#define	INVKFI_SPEED2	9156    // ~3110 RPM
-#define	INVKFI_SPEED3	9638    // ~3270 RPM
-#define	INVKFI_SPEED4	10120    // ~3430 RPM
-#define	INVKFI_SPEED5	10602    // ~3600 RPM
-#define	INVKFI_SPEED6	11084    // ~3750 RPM
-#define	INVKFI_SPEED7	11566    // ~3910 RPM
-#define	INVKFI_SPEED8	12048    // ~4070 RPM
-#define	INVKFI_SPEED9	12530    // ~4230 RPM 
-#define	INVKFI_SPEED10	13012    // ~4380 RPM
-#define	INVKFI_SPEED11	13494    // ~4550 RPM
-#define	INVKFI_SPEED12	13976    // ~4700 RPM
-#define	INVKFI_SPEED13	14458    // ~4860 RPM
-#define	INVKFI_SPEED14	14940    // ~5020 RPM
-#define	INVKFI_SPEED15	15422    // ~5180 RPM
-#define	INVKFI_SPEED16	15904    // ~5340 RPM
-#define	INVKFI_SPEED17	16387    // ~5500 RPM
+    #define	INVKFI_SPEED0	NORM_INVKFIBASE     // up to 2800 RPM
+#define	INVKFI_SPEED1	NORM_INVKFIBASE//8674     // ~2950 RPM
+#define	INVKFI_SPEED2	NORM_INVKFIBASE    // ~3110 RPM
+#define	INVKFI_SPEED3	NORM_INVKFIBASE    // ~3270 RPM
+#define	INVKFI_SPEED4	NORM_INVKFIBASE    // ~3430 RPM
+#define	INVKFI_SPEED5	NORM_INVKFIBASE    // ~3600 RPM
+#define	INVKFI_SPEED6	NORM_INVKFIBASE    // ~3750 RPM
+#define	INVKFI_SPEED7	NORM_INVKFIBASE    // ~3910 RPM
+#define	INVKFI_SPEED8	NORM_INVKFIBASE    // ~4070 RPM
+#define	INVKFI_SPEED9	NORM_INVKFIBASE    // ~4230 RPM 
+#define	INVKFI_SPEED10	NORM_INVKFIBASE    // ~4380 RPM
+#define	INVKFI_SPEED11	NORM_INVKFIBASE    // ~4550 RPM
+#define	INVKFI_SPEED12	NORM_INVKFIBASE    // ~4700 RPM
+#define	INVKFI_SPEED13	NORM_INVKFIBASE    // ~4860 RPM
+#define	INVKFI_SPEED14	NORM_INVKFIBASE    // ~5020 RPM
+#define	INVKFI_SPEED15	NORM_INVKFIBASE    // ~5180 RPM
+#define	INVKFI_SPEED16	NORM_INVKFIBASE    // ~5340 RPM
+#define	INVKFI_SPEED17	NORM_INVKFIBASE    // ~5500 RPM
 
 
 
 /* the following values indicate the Ls variation with speed */
 /* please consult app note for details on tuning */
 #define     LS_OVER2LS0_SPEED0            Q15(0.5)   // up to 2800 RPM
-#define     LS_OVER2LS0_SPEED1            Q15(0.45)  // ~2950 RPM
-#define     LS_OVER2LS0_SPEED2            Q15(0.4)   // ~3110 RPM
-#define     LS_OVER2LS0_SPEED3            Q15(0.4)  // ~3270 RPM
-#define     LS_OVER2LS0_SPEED4            Q15(0.35)   // ~3430 RPM
-#define     LS_OVER2LS0_SPEED5            Q15(0.35)  // ~3600 RPM
-#define     LS_OVER2LS0_SPEED6            Q15(0.34)  // ~3750 RPM
-#define     LS_OVER2LS0_SPEED7            Q15(0.34)  // ~3910 RPM
-#define     LS_OVER2LS0_SPEED8            Q15(0.33)  // ~4070 RPM
-#define     LS_OVER2LS0_SPEED9            Q15(0.33)  // ~4230 RPM
-#define     LS_OVER2LS0_SPEED10           Q15(0.32)  // ~4380 RPM
-#define     LS_OVER2LS0_SPEED11           Q15(0.32)  // ~4550 RPM
-#define     LS_OVER2LS0_SPEED12           Q15(0.31)  // ~4700 RPM
-#define     LS_OVER2LS0_SPEED13           Q15(0.30)  // ~4860 RPM
-#define     LS_OVER2LS0_SPEED14           Q15(0.29)  // ~5020 RPM
-#define     LS_OVER2LS0_SPEED15           Q15(0.28)  // ~5180 RPM
-#define     LS_OVER2LS0_SPEED16           Q15(0.27)  // ~5340 RPM
-#define     LS_OVER2LS0_SPEED17           Q15(0.26)  // ~5500 RPM
+#define     LS_OVER2LS0_SPEED1            LS_OVER2LS0_SPEED0//Q15(0.45)  // ~2950 RPM
+#define     LS_OVER2LS0_SPEED2            LS_OVER2LS0_SPEED0//Q15(0.4)   // ~3110 RPM
+#define     LS_OVER2LS0_SPEED3            LS_OVER2LS0_SPEED0//Q15(0.4)  // ~3270 RPM
+#define     LS_OVER2LS0_SPEED4            LS_OVER2LS0_SPEED0//Q15(0.35)   // ~3430 RPM
+#define     LS_OVER2LS0_SPEED5            LS_OVER2LS0_SPEED0//Q15(0.35)  // ~3600 RPM
+#define     LS_OVER2LS0_SPEED6            LS_OVER2LS0_SPEED0//Q15(0.34)  // ~3750 RPM
+#define     LS_OVER2LS0_SPEED7            LS_OVER2LS0_SPEED0//Q15(0.34)  // ~3910 RPM
+#define     LS_OVER2LS0_SPEED8            LS_OVER2LS0_SPEED0//Q15(0.33)  // ~4070 RPM
+#define     LS_OVER2LS0_SPEED9            LS_OVER2LS0_SPEED0//Q15(0.33)  // ~4230 RPM
+#define     LS_OVER2LS0_SPEED10           LS_OVER2LS0_SPEED0//Q15(0.32)  // ~4380 RPM
+#define     LS_OVER2LS0_SPEED11           LS_OVER2LS0_SPEED0//Q15(0.32)  // ~4550 RPM
+#define     LS_OVER2LS0_SPEED12           LS_OVER2LS0_SPEED0//Q15(0.31)  // ~4700 RPM
+#define     LS_OVER2LS0_SPEED13           LS_OVER2LS0_SPEED0//Q15(0.30)  // ~4860 RPM
+#define     LS_OVER2LS0_SPEED14           LS_OVER2LS0_SPEED0//Q15(0.29)  // ~5020 RPM
+#define     LS_OVER2LS0_SPEED15           LS_OVER2LS0_SPEED0//Q15(0.28)  // ~5180 RPM
+#define     LS_OVER2LS0_SPEED16           LS_OVER2LS0_SPEED0//Q15(0.27)  // ~5340 RPM
+#define     LS_OVER2LS0_SPEED17           LS_OVER2LS0_SPEED0//Q15(0.26)  // ~5500 RPM
 
 #endif
